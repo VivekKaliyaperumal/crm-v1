@@ -1,0 +1,702 @@
+// SmartAgro CRM — Prisma schema
+// Faithfully mapped from supabase/migrations/*.sql (the source of truth).
+// User-id columns (assigned_to, created_by, owner_id, actor_id, etc.) reference
+// Supabase's auth.users table, which is managed by Supabase — they are kept as
+// scalar Uuid fields here (no Prisma relation) on purpose. Org-scoping + RBAC
+// that used to live in Postgres RLS is now enforced in the NestJS service layer.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")  // pooled connection (Supavisor), for the app
+  directUrl = env("DIRECT_URL")    // direct connection (port 5432), for migrations
+}
+
+// ============================ ENUMS ============================
+
+enum AppRole {
+  admin
+  sales_manager
+  sales_executive
+  telecaller
+
+  @@map("app_role")
+}
+
+enum LeadStatus {
+  new
+  contacted
+  interested
+  site_visit_scheduled
+  site_visit_completed
+  negotiation
+  booking
+  closed_won
+  closed_lost
+  not_interested
+  future_follow_up
+
+  @@map("lead_status")
+}
+
+enum LeadSource {
+  manual
+  web_form
+  import
+  referral
+  walk_in
+  other
+
+  @@map("lead_source")
+}
+
+enum ActivityType {
+  note
+  call
+  email
+  status_change
+  assignment
+  follow_up
+  site_visit
+
+  @@map("activity_type")
+}
+
+enum FollowupPriority {
+  low
+  medium
+  high
+
+  @@map("followup_priority")
+}
+
+enum FollowupStatus {
+  pending
+  completed
+  cancelled
+
+  @@map("followup_status")
+}
+
+enum VisitStatus {
+  scheduled
+  completed
+  cancelled
+  no_show
+
+  @@map("visit_status")
+}
+
+enum ProjectStatus {
+  planning
+  active
+  on_hold
+  completed
+  archived
+
+  @@map("project_status")
+}
+
+enum PlotStatus {
+  available
+  blocked
+  booked
+  sold
+
+  @@map("plot_status")
+}
+
+enum PlotFacing {
+  north
+  south
+  east
+  west
+  north_east
+  north_west
+  south_east
+  south_west
+
+  @@map("plot_facing")
+}
+
+enum OpportunityStage {
+  qualification
+  proposal
+  negotiation
+  closed_won
+  closed_lost
+
+  @@map("opportunity_stage")
+}
+
+enum DealStatus {
+  open
+  won
+  lost
+  on_hold
+
+  @@map("deal_status")
+}
+
+enum TaskStatus {
+  open
+  in_progress
+  done
+  cancelled
+
+  @@map("task_status")
+}
+
+enum TaskPriority {
+  low
+  medium
+  high
+  urgent
+
+  @@map("task_priority")
+}
+
+enum QuotationStatus {
+  draft
+  sent
+  accepted
+  rejected
+  expired
+
+  @@map("quotation_status")
+}
+
+enum BookingStatus {
+  pending
+  confirmed
+  cancelled
+  completed
+
+  @@map("booking_status")
+}
+
+enum PaymentStatus {
+  scheduled
+  due
+  partial
+  paid
+  overdue
+  cancelled
+
+  @@map("payment_status")
+}
+
+enum PaymentMode {
+  cash
+  cheque
+  bank_transfer
+  upi
+  card
+  other
+
+  @@map("payment_mode")
+}
+
+enum CampaignChannel {
+  facebook
+  google
+  instagram
+  whatsapp
+  email
+  sms
+  referral
+  event
+  other
+
+  @@map("campaign_channel")
+}
+
+enum CampaignStatus {
+  draft
+  active
+  paused
+  completed
+
+  @@map("campaign_status")
+}
+
+enum KycStatus {
+  pending
+  verified
+  rejected
+
+  @@map("kyc_status")
+}
+
+// ============================ MODELS ============================
+
+model Organization {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name      String
+  slug      String   @unique
+  branding  Json     @default("{}")
+  settings  Json     @default("{}")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("organizations")
+}
+
+model Profile {
+  id        String   @id @db.Uuid // == auth.users.id
+  orgId     String?  @map("org_id") @db.Uuid
+  fullName  String?  @map("full_name")
+  email     String?
+  phone     String?
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([orgId])
+  @@map("profiles")
+}
+
+model UserRole {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  orgId     String   @map("org_id") @db.Uuid
+  role      AppRole
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@unique([userId, orgId, role])
+  @@index([userId, orgId], map: "idx_user_roles_lookup")
+  @@map("user_roles")
+}
+
+model Lead {
+  id              String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orgId           String     @map("org_id") @db.Uuid
+  fullName        String     @map("full_name")
+  phone           String?
+  email           String?
+  propertyInterest String?   @map("property_interest")
+  budgetMin       Decimal?   @map("budget_min") @db.Decimal
+  budgetMax       Decimal?   @map("budget_max") @db.Decimal
+  timeline        String?
+  source          LeadSource @default(manual)
+  status          LeadStatus @default(new)
+  assignedTo      String?    @map("assigned_to") @db.Uuid
+  createdBy       String?    @map("created_by") @db.Uuid
+  notes           String?
+  lastActivityAt  DateTime   @default(now()) @map("last_activity_at") @db.Timestamptz(6)
+  createdAt       DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime   @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  activities    LeadActivity[]
+  followUps     FollowUp[]
+  siteVisits    SiteVisit[]
+  customers     Customer[]
+  opportunities Opportunity[]
+  tasks         Task[]
+  quotations    Quotation[]
+  reservedPlots Plot[]
+
+  @@index([orgId, status], map: "idx_leads_org_status")
+  @@index([orgId, assignedTo], map: "idx_leads_org_assigned")
+  @@index([orgId, createdAt(sort: Desc)], map: "idx_leads_org_created")
+  @@map("leads")
+}
+
+model LeadActivity {
+  id         String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orgId      String       @map("org_id") @db.Uuid
+  leadId     String       @map("lead_id") @db.Uuid
+  type       ActivityType
+  payload    Json         @default("{}")
+  actorId    String?      @map("actor_id") @db.Uuid
+  occurredAt DateTime     @default(now()) @map("occurred_at") @db.Timestamptz(6)
+  createdAt  DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  lead Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  @@index([leadId, occurredAt(sort: Desc)], map: "idx_activities_lead")
+  @@index([orgId, occurredAt(sort: Desc)], map: "idx_activities_org")
+  @@map("lead_activities")
+}
+
+model FollowUp {
+  id          String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orgId       String           @map("org_id") @db.Uuid
+  leadId      String           @map("lead_id") @db.Uuid
+  assignedTo  String?          @map("assigned_to") @db.Uuid
+  dueAt       DateTime         @map("due_at") @db.Timestamptz(6)
+  priority    FollowupPriority @default(medium)
+  status      FollowupStatus   @default(pending)
+  notes       String?
+  outcome     String?
+  completedAt DateTime?        @map("completed_at") @db.Timestamptz(6)
+  createdBy   String?          @map("created_by") @db.Uuid
+  createdAt   DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  lead Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  @@index([orgId, dueAt], map: "idx_followups_org_due")
+  @@index([assignedTo, dueAt], map: "idx_followups_assigned")
+  @@map("follow_ups")
+}
+
+model SiteVisit {
+  id           String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orgId        String      @map("org_id") @db.Uuid
+  leadId       String      @map("lead_id") @db.Uuid
+  assignedTo   String?     @map("assigned_to") @db.Uuid
+  scheduledAt  DateTime    @map("scheduled_at") @db.Timestamptz(6)
+  location     String
+  status       VisitStatus @default(scheduled)
+  preChecklist Json        @default("[]") @map("pre_checklist")
+  postReport   Json        @default("{}") @map("post_report")
+  notes        String?
+  createdBy    String?     @map("created_by") @db.Uuid
+  createdAt    DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime    @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  lead Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  @@index([orgId, scheduledAt], map: "idx_visits_org_scheduled")
+  @@index([assignedTo, scheduledAt], map: "idx_visits_assigned")
+  @@map("site_visits")
+}
+
+model AssignmentPointer {
+  orgId              String   @id @map("org_id") @db.Uuid
+  lastAssignedUserId String?  @map("last_assigned_user_id") @db.Uuid
+  updatedAt          DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("assignment_pointer")
+}
+
+model AuditLog {
+  id       String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orgId    String   @map("org_id") @db.Uuid
+  actorId  String?  @map("actor_id") @db.Uuid
+  entity   String
+  entityId String?  @map("entity_id") @db.Uuid
+  action   String
+  diff     Json     @default("{}")
+  at       DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([orgId, at(sort: Desc)], map: "idx_audit_org_at")
+  @@map("audit_logs")
+}
+
+model Project {
+  id            String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orgId         String        @map("org_id") @db.Uuid
+  name          String
+  code          String?
+  location      String?
+  description   String?
+  totalAreaSqft Decimal?      @map("total_area_sqft") @db.Decimal(14, 2)
+  totalPlots    Int?          @default(0) @map("total_plots")
+  status        ProjectStatus @default(planning)
+  coverImageUrl String?       @map("cover_image_url")
+  launchDate    DateTime?     @map("launch_date") @db.Date
+  createdBy     String?       @map("created_by") @db.Uuid
+  createdAt     DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  plots         Plot[]
+  opportunities Opportunity[]
+  quotations    Quotation[]
+  bookings      Booking[]
+
+  @@index([orgId], map: "idx_projects_org")
+  @@index([status], map: "idx_projects_status")
+  @@map("projects")
+}
+
+model Plot {
+  id           String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orgId        String      @map("org_id") @db.Uuid
+  projectId    String      @map("project_id") @db.Uuid
+  plotNumber   String      @map("plot_number")
+  areaSqft     Decimal     @map("area_sqft") @db.Decimal(12, 2)
+  pricePerSqft Decimal?    @map("price_per_sqft") @db.Decimal(12, 2)
+  totalPrice   Decimal     @map("total_price") @db.Decimal(14, 2)
+  facing       PlotFacing?
+  status       PlotStatus  @default(available)
+  block        String?
+  notes        String?
+  reservedFor  String?     @map("reserved_for") @db.Uuid
+  createdAt    DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime    @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  project       Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  reservedLead  Lead?         @relation(fields: [reservedFor], references: [id], onDelete: SetNull)
+  opportunities Opportunity[]
+  deals         Deal[]
+  quotations    Quotation[]
+  bookings      Booking[]
+
+  @@unique([projectId, plotNumber])
+  @@index([orgId], map: "idx_plots_org")
+  @@index([projectId], map: "idx_plots_project")
+  @@index([status], map: "idx_plots_status")
+  @@map("plots")
+}
+
+model Customer {
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orgId     String    @map("org_id") @db.Uuid
+  leadId    String?   @map("lead_id") @db.Uuid
+  fullName  String    @map("full_name")
+  email     String?
+  phone     String
+  pan       String?
+  address   String?
+  city      String?
+  state     String?
+  pincode   String?
+  kycStatus KycStatus @default(pending) @map("kyc_status")
+  notes     String?
+  ownerId   String?   @map("owner_id") @db.Uuid
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  lead          Lead?         @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  opportunities Opportunity[]
+  deals         Deal[]
+  tasks         Task[]
+  quotations    Quotation[]
+  bookings      Booking[]
+  payments      Payment[]
+  receipts      Receipt[]
+
+  @@index([orgId], map: "idx_customers_org")
+  @@index([ownerId], map: "idx_customers_owner")
+  @@map("customers")
+}
+
+model Opportunity {
+  id            String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orgId         String           @map("org_id") @db.Uuid
+  leadId        String?          @map("lead_id") @db.Uuid
+  customerId    String?          @map("customer_id") @db.Uuid
+  projectId     String?          @map("project_id") @db.Uuid
+  plotId        String?          @map("plot_id") @db.Uuid
+  title         String
+  stage         OpportunityStage @default(qualification)
+  value         Decimal          @default(0) @db.Decimal(14, 2)
+  probability   Int              @default(20)
+  expectedClose DateTime?        @map("expected_close") @db.Date
+  ownerId       String?          @map("owner_id") @db.Uuid
+  notes         String?
+  createdAt     DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  lead     Lead?     @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  customer Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  project  Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  plot     Plot?     @relation(fields: [plotId], references: [id], onDelete: SetNull)
+  deals    Deal[]
+  tasks    Task[]
+
+  @@index([orgId], map: "idx_opps_org")
+  @@index([stage], map: "idx_opps_stage")
+  @@index([ownerId], map: "idx_opps_owner")
+  @@map("opportunities")
+}
+
+model Deal {
+  id            String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orgId         String     @map("org_id") @db.Uuid
+  opportunityId String?    @map("opportunity_id") @db.Uuid
+  customerId    String?    @map("customer_id") @db.Uuid
+  plotId        String?    @map("plot_id") @db.Uuid
+  title         String
+  amount        Decimal    @default(0) @db.Decimal(14, 2)
+  status        DealStatus @default(open)
+  ownerId       String?    @map("owner_id") @db.Uuid
+  closedAt      DateTime?  @map("closed_at") @db.Timestamptz(6)
+  createdAt     DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime   @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  opportunity Opportunity? @relation(fields: [opportunityId], references: [id], onDelete: SetNull)
+  customer    Customer?    @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  plot        Plot?        @relation(fields: [plotId], references: [id], onDelete: SetNull)
+
+  @@index([orgId], map: "idx_deals_org")
+  @@index([status], map: "idx_deals_status")
+  @@map("deals")
+}
+
+model Task {
+  id                   String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orgId                String       @map("org_id") @db.Uuid
+  title                String
+  description          String?
+  status               TaskStatus   @default(open)
+  priority             TaskPriority @default(medium)
+  dueAt                DateTime?    @map("due_at") @db.Timestamptz(6)
+  assignedTo           String?      @map("assigned_to") @db.Uuid
+  relatedLeadId        String?      @map("related_lead_id") @db.Uuid
+  relatedCustomerId    String?      @map("related_customer_id") @db.Uuid
+  relatedOpportunityId String?      @map("related_opportunity_id") @db.Uuid
+  completedAt          DateTime?    @map("completed_at") @db.Timestamptz(6)
+  createdBy            String?      @map("created_by") @db.Uuid
+  createdAt            DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  lead        Lead?        @relation(fields: [relatedLeadId], references: [id], onDelete: SetNull)
+  customer    Customer?    @relation(fields: [relatedCustomerId], references: [id], onDelete: SetNull)
+  opportunity Opportunity? @relation(fields: [relatedOpportunityId], references: [id], onDelete: SetNull)
+
+  @@index([orgId], map: "idx_tasks_org")
+  @@index([assignedTo], map: "idx_tasks_assigned")
+  @@index([dueAt], map: "idx_tasks_due")
+  @@map("tasks")
+}
+
+model Quotation {
+  id              String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orgId           String          @map("org_id") @db.Uuid
+  quotationNumber String          @map("quotation_number")
+  customerId      String?         @map("customer_id") @db.Uuid
+  leadId          String?         @map("lead_id") @db.Uuid
+  plotId          String?         @map("plot_id") @db.Uuid
+  projectId       String?         @map("project_id") @db.Uuid
+  amount          Decimal         @default(0) @db.Decimal(14, 2)
+  tax             Decimal         @default(0) @db.Decimal(14, 2)
+  discount        Decimal         @default(0) @db.Decimal(14, 2)
+  total           Decimal         @default(0) @db.Decimal(14, 2)
+  status          QuotationStatus @default(draft)
+  validUntil      DateTime?       @map("valid_until") @db.Date
+  notes           String?
+  createdBy       String?         @map("created_by") @db.Uuid
+  createdAt       DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime        @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  customer Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  lead     Lead?     @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  plot     Plot?     @relation(fields: [plotId], references: [id], onDelete: SetNull)
+  project  Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  bookings Booking[]
+
+  @@unique([orgId, quotationNumber])
+  @@index([orgId], map: "idx_quot_org")
+  @@index([status], map: "idx_quot_status")
+  @@map("quotations")
+}
+
+model Booking {
+  id            String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orgId         String        @map("org_id") @db.Uuid
+  bookingNumber String        @map("booking_number")
+  quotationId   String?       @map("quotation_id") @db.Uuid
+  customerId    String        @map("customer_id") @db.Uuid
+  plotId        String        @map("plot_id") @db.Uuid
+  projectId     String?       @map("project_id") @db.Uuid
+  bookingAmount Decimal       @default(0) @map("booking_amount") @db.Decimal(14, 2)
+  totalAmount   Decimal       @default(0) @map("total_amount") @db.Decimal(14, 2)
+  agreementDate DateTime?     @map("agreement_date") @db.Date
+  status        BookingStatus @default(pending)
+  notes         String?
+  createdBy     String?       @map("created_by") @db.Uuid
+  createdAt     DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  quotation Quotation? @relation(fields: [quotationId], references: [id], onDelete: SetNull)
+  customer  Customer   @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  plot      Plot       @relation(fields: [plotId], references: [id], onDelete: Restrict)
+  project   Project?   @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  payments  Payment[]
+
+  @@unique([orgId, bookingNumber])
+  @@index([orgId], map: "idx_book_org")
+  @@index([status], map: "idx_book_status")
+  @@map("bookings")
+}
+
+model Payment {
+  id         String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orgId      String        @map("org_id") @db.Uuid
+  bookingId  String?       @map("booking_id") @db.Uuid
+  customerId String?       @map("customer_id") @db.Uuid
+  amount     Decimal       @db.Decimal(14, 2)
+  mode       PaymentMode   @default(bank_transfer)
+  status     PaymentStatus @default(scheduled)
+  dueDate    DateTime?     @map("due_date") @db.Date
+  paidAt     DateTime?     @map("paid_at") @db.Timestamptz(6)
+  reference  String?
+  notes      String?
+  createdAt  DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  booking  Booking?  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  customer Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  receipts Receipt[]
+
+  @@index([orgId], map: "idx_pay_org")
+  @@index([status], map: "idx_pay_status")
+  @@index([bookingId], map: "idx_pay_booking")
+  @@map("payments")
+}
+
+model Receipt {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orgId         String   @map("org_id") @db.Uuid
+  receiptNumber String   @map("receipt_number")
+  paymentId     String?  @map("payment_id") @db.Uuid
+  customerId    String?  @map("customer_id") @db.Uuid
+  amount        Decimal  @db.Decimal(14, 2)
+  issuedAt      DateTime @default(now()) @map("issued_at") @db.Timestamptz(6)
+  notes         String?
+  issuedBy      String?  @map("issued_by") @db.Uuid
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  payment  Payment?  @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+  customer Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+
+  @@unique([orgId, receiptNumber])
+  @@index([orgId], map: "idx_rec_org")
+  @@map("receipts")
+}
+
+model Campaign {
+  id         String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orgId      String          @map("org_id") @db.Uuid
+  name       String
+  channel    CampaignChannel @default(other)
+  status     CampaignStatus  @default(draft)
+  budget     Decimal         @default(0) @db.Decimal(14, 2)
+  spent      Decimal         @default(0) @db.Decimal(14, 2)
+  leadsCount Int             @default(0) @map("leads_count")
+  startDate  DateTime?       @map("start_date") @db.Date
+  endDate    DateTime?       @map("end_date") @db.Date
+  notes      String?
+  createdBy  String?         @map("created_by") @db.Uuid
+  createdAt  DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime        @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([orgId], map: "idx_camp_org")
+  @@index([status], map: "idx_camp_status")
+  @@map("campaigns")
+}
+
+model Document {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orgId       String   @map("org_id") @db.Uuid
+  entityType  String   @map("entity_type")
+  entityId    String   @map("entity_id") @db.Uuid
+  name        String
+  storagePath String   @map("storage_path")
+  mimeType    String?  @map("mime_type")
+  sizeBytes   BigInt?  @map("size_bytes")
+  uploadedBy  String?  @map("uploaded_by") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([orgId], map: "idx_docs_org")
+  @@index([entityType, entityId], map: "idx_docs_entity")
+  @@map("documents")
+}
