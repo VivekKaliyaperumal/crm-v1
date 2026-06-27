@@ -6,7 +6,7 @@ export const createReceiptSchema = z.object({
   receiptNumber: z.string().min(1, 'Receipt number is required'),
   paymentId: z.string().uuid().optional(),
   customerId: z.string().uuid().optional(),
-  amount: z.number(),
+  amount: z.coerce.number(),
   issuedAt: z.coerce.date().optional(),
   notes: z.string().trim().max(5000).optional(),
 });

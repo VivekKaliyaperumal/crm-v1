@@ -12,8 +12,8 @@ export const createOpportunitySchema = z.object({
   plotId: z.string().uuid().optional(),
   title: z.string().trim().min(1, 'Title is required').max(200),
   stage: opportunityStageEnum.default(OpportunityStage.qualification),
-  value: z.number().nonnegative().default(0),
-  probability: z.number().int().min(0).max(100).default(20),
+  value: z.coerce.number().nonnegative().default(0),
+  probability: z.coerce.number().int().min(0).max(100).default(20),
   expectedClose: z.coerce.date().optional(),
   notes: z.string().trim().max(5000).optional(),
 });

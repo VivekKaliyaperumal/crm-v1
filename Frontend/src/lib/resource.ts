@@ -31,7 +31,7 @@ export function useResourceItem(apiPath: string, id: string) {
   return useQuery({
     queryKey: [apiPath, 'item', id],
     queryFn: () => apiFetch<Row>(`${apiPath}/${id}`),
-    enabled: Boolean(id),
+    enabled: Boolean(id) && Boolean(apiPath),
   });
 }
 
@@ -40,6 +40,24 @@ export function useResourceCreate(apiPath: string) {
   return useMutation({
     mutationFn: (body: Record<string, unknown>) =>
       apiFetch<Row>(apiPath, { method: 'POST', body: JSON.stringify(body) }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: [apiPath] }),
+  });
+}
+
+export function useResourceUpdate(apiPath: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, body }: { id: string; body: Record<string, unknown> }) =>
+      apiFetch<Row>(`${apiPath}/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: [apiPath] }),
+  });
+}
+
+export function useResourceDelete(apiPath: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      apiFetch<{ id: string; deleted: boolean }>(`${apiPath}/${id}`, { method: 'DELETE' }),
     onSuccess: () => qc.invalidateQueries({ queryKey: [apiPath] }),
   });
 }

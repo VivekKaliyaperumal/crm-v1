@@ -3,6 +3,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { Plus, Search } from 'lucide-react';
 import { useLeads, LEAD_STATUSES, STATUS_LABEL, type LeadStatus } from '@/lib/leads';
+import { useMe, can } from '@/lib/me';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
@@ -14,6 +15,9 @@ export default function LeadsPage() {
   const [status, setStatus] = useState<LeadStatus | ''>('');
   const [page, setPage] = useState(1);
   const pageSize = 25;
+
+  const { data: me } = useMe();
+  const canCreate = can(me, 'leads', 'create');
 
   const { data, isLoading, isError, error } = useLeads({
     search: search || undefined,
@@ -33,11 +37,13 @@ export default function LeadsPage() {
             {data ? `${data.total} total` : 'Loading…'}
           </p>
         </div>
-        <Link href="/app/leads/new">
-          <Button>
-            <Plus className="size-4" /> New lead
-          </Button>
-        </Link>
+        {canCreate && (
+          <Link href="/app/leads/new">
+            <Button>
+              <Plus className="size-4" /> New lead
+            </Button>
+          </Link>
+        )}
       </div>
 
       <div className="flex flex-wrap items-center gap-2">

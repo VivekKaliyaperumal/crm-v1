@@ -2,8 +2,23 @@
 // generic list / create / detail pages under /app/[resource]. Leads keeps its
 // own bespoke pages and is intentionally not here.
 
+import {
+  KYC_STATUSES, OPPORTUNITY_STAGES, DEAL_STATUSES, PROJECT_STATUSES, PLOT_STATUSES,
+  PLOT_FACINGS, CAMPAIGN_CHANNELS, CAMPAIGN_STATUSES, QUOTATION_STATUSES, BOOKING_STATUSES,
+  PAYMENT_STATUSES, PAYMENT_MODES, TASK_STATUSES, TASK_PRIORITIES, VISIT_STATUSES,
+  FOLLOWUP_PRIORITIES, FOLLOWUP_STATUSES, humanize,
+} from '@smartagro-crm/shared';
+
 export type ColumnType = 'text' | 'money' | 'date' | 'number' | 'status';
-export type FieldType = 'text' | 'number' | 'money' | 'date' | 'textarea' | 'select' | 'ref';
+export type FieldType =
+  | 'text'
+  | 'number'
+  | 'money'
+  | 'date'
+  | 'textarea'
+  | 'select'
+  | 'ref'
+  | 'file';
 
 export interface ColumnDef {
   key: string;
@@ -22,6 +37,7 @@ export interface FieldDef {
   label: string;
   type: FieldType;
   required?: boolean;
+  hidden?: boolean; // present in the payload, not rendered (auto-filled, e.g. by a file upload)
   options?: Option[]; // for select
   refPath?: string; // for ref — apiPath of related resource
   refLabel?: string; // for ref — field on the related row to display
@@ -44,32 +60,26 @@ export interface ResourceConfig {
   filters?: FilterDef[];
 }
 
-const opts = (...values: string[]): Option[] =>
-  values.map((v) => ({
-    value: v,
-    label: v
-      .split('_')
-      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-      .join(' '),
-  }));
+const toOptions = (values: readonly string[]): Option[] =>
+  values.map((v) => ({ value: v, label: humanize(v) }));
 
-const KYC = opts('pending', 'verified', 'rejected');
-const OPP_STAGE = opts('qualification', 'proposal', 'negotiation', 'closed_won', 'closed_lost');
-const DEAL_STATUS = opts('open', 'won', 'lost', 'on_hold');
-const PROJECT_STATUS = opts('planning', 'active', 'on_hold', 'completed', 'archived');
-const PLOT_STATUS = opts('available', 'blocked', 'booked', 'sold');
-const PLOT_FACING = opts('north', 'south', 'east', 'west', 'north_east', 'north_west', 'south_east', 'south_west');
-const CAMPAIGN_CHANNEL = opts('facebook', 'google', 'instagram', 'whatsapp', 'email', 'sms', 'referral', 'event', 'other');
-const CAMPAIGN_STATUS = opts('draft', 'active', 'paused', 'completed');
-const QUOTATION_STATUS = opts('draft', 'sent', 'accepted', 'rejected', 'expired');
-const BOOKING_STATUS = opts('pending', 'confirmed', 'cancelled', 'completed');
-const PAYMENT_STATUS = opts('scheduled', 'due', 'partial', 'paid', 'overdue', 'cancelled');
-const PAYMENT_MODE = opts('cash', 'cheque', 'bank_transfer', 'upi', 'card', 'other');
-const TASK_STATUS = opts('open', 'in_progress', 'done', 'cancelled');
-const TASK_PRIORITY = opts('low', 'medium', 'high', 'urgent');
-const VISIT_STATUS = opts('scheduled', 'completed', 'cancelled', 'no_show');
-const FU_PRIORITY = opts('low', 'medium', 'high');
-const FU_STATUS = opts('pending', 'completed', 'cancelled');
+const KYC = toOptions(KYC_STATUSES);
+const OPP_STAGE = toOptions(OPPORTUNITY_STAGES);
+const DEAL_STATUS = toOptions(DEAL_STATUSES);
+const PROJECT_STATUS = toOptions(PROJECT_STATUSES);
+const PLOT_STATUS = toOptions(PLOT_STATUSES);
+const PLOT_FACING = toOptions(PLOT_FACINGS);
+const CAMPAIGN_CHANNEL = toOptions(CAMPAIGN_CHANNELS);
+const CAMPAIGN_STATUS = toOptions(CAMPAIGN_STATUSES);
+const QUOTATION_STATUS = toOptions(QUOTATION_STATUSES);
+const BOOKING_STATUS = toOptions(BOOKING_STATUSES);
+const PAYMENT_STATUS = toOptions(PAYMENT_STATUSES);
+const PAYMENT_MODE = toOptions(PAYMENT_MODES);
+const TASK_STATUS = toOptions(TASK_STATUSES);
+const TASK_PRIORITY = toOptions(TASK_PRIORITIES);
+const VISIT_STATUS = toOptions(VISIT_STATUSES);
+const FU_PRIORITY = toOptions(FOLLOWUP_PRIORITIES);
+const FU_STATUS = toOptions(FOLLOWUP_STATUSES);
 
 export const RESOURCES: Record<string, ResourceConfig> = {
   customers: {
@@ -336,12 +346,12 @@ export const RESOURCES: Record<string, ResourceConfig> = {
       { key: 'createdAt', label: 'Added', type: 'date' },
     ],
     fields: [
+      { key: 'storagePath', label: 'File', type: 'file', required: true },
       { key: 'name', label: 'Name', type: 'text', required: true },
       { key: 'entityType', label: 'Entity type', type: 'text', required: true },
       { key: 'entityId', label: 'Entity ID', type: 'text', required: true },
-      { key: 'storagePath', label: 'Storage path', type: 'text', required: true },
-      { key: 'mimeType', label: 'MIME type', type: 'text' },
-      { key: 'sizeBytes', label: 'Size (bytes)', type: 'number' },
+      { key: 'mimeType', label: 'MIME type', type: 'text', hidden: true },
+      { key: 'sizeBytes', label: 'Size (bytes)', type: 'number', hidden: true },
     ],
   },
   tasks: {

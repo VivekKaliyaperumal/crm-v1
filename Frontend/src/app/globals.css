@@ -18,8 +18,14 @@ body {
 body {
   background: var(--background);
   color: var(--foreground);
+  font-family: var(--font-sans), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+}
+
+/* Tabular figures keep money/number columns aligned. */
+table {
+  font-variant-numeric: tabular-nums;
 }
 
 /* Neat, unobtrusive scrollbars (thin, themed) — the "scroller" polish. */
@@ -67,8 +73,36 @@ body {
   animation-delay: -10s;
 }
 
+/* Entrance transitions. */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-fade-in {
+  animation: fade-in 0.3s ease both;
+}
+.animate-fade-in-up {
+  animation: fade-in-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .animate-blob {
+  .animate-blob,
+  .animate-fade-in,
+  .animate-fade-in-up {
     animation: none;
   }
 }

@@ -10,7 +10,7 @@ export const createDealSchema = z.object({
   customerId: z.string().uuid().optional(),
   plotId: z.string().uuid().optional(),
   title: z.string().trim().min(1, 'Title is required').max(200),
-  amount: z.number().nonnegative().default(0),
+  amount: z.coerce.number().nonnegative().default(0),
   status: dealStatusEnum.default(DealStatus.open),
   closedAt: z.coerce.date().optional(),
 });

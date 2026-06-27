@@ -4,7 +4,8 @@ import { Logger } from '@nestjs/common';
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import fastifyCookie from '@fastify/cookie';
-import { patchNestJsSwagger } from 'nestjs-zod';
+import helmet from '@fastify/helmet';
+import * as Sentry from '@sentry/node';
 import { AppModule } from './app.module';
 
 // Allow BigInt values (e.g. Document.sizeBytes) to survive JSON serialization.
@@ -18,12 +19,20 @@ BigInt.prototype.toJSON = function (): string {
 };
 
 async function bootstrap(): Promise<void> {
+  // Error tracking — only active when SENTRY_DSN is configured.
+  if (process.env.SENTRY_DSN) {
+    Sentry.init({ dsn: process.env.SENTRY_DSN, tracesSampleRate: 0.1 });
+  }
+
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
     new FastifyAdapter(),
   );
 
   await app.register(fastifyCookie);
+  // Security headers. CSP disabled so the Swagger UI keeps working.
+  await app.register(helmet, { contentSecurityPolicy: false });
+  app.enableShutdownHooks();
 
   app.setGlobalPrefix('api');
 
@@ -32,8 +41,6 @@ async function bootstrap(): Promise<void> {
     .map((o) => o.trim());
   app.enableCors({ origin: corsOrigins, credentials: true });
 
-  // Make @nestjs/swagger understand Zod DTOs.
-  patchNestJsSwagger();
   const config = new DocumentBuilder()
     .setTitle('SmartAgro CRM API')
     .setDescription('Land CRM — leads, sales, inventory, billing')

@@ -8,7 +8,7 @@ export const createDocumentSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   storagePath: z.string().min(1, 'Storage path is required'),
   mimeType: z.string().trim().max(200).optional(),
-  sizeBytes: z.number().int().optional(),
+  sizeBytes: z.coerce.number().int().optional(),
 });
 
 export const updateDocumentSchema = createDocumentSchema.partial();
@@ -18,6 +18,11 @@ export const listDocumentsQuerySchema = z.object({
   pageSize: z.coerce.number().int().min(1).max(100).default(25),
 });
 
+export const uploadUrlSchema = z.object({
+  filename: z.string().min(1, 'Filename is required').max(255),
+});
+
 export class CreateDocumentDto extends createZodDto(createDocumentSchema) {}
 export class UpdateDocumentDto extends createZodDto(updateDocumentSchema) {}
 export class ListDocumentsQueryDto extends createZodDto(listDocumentsQuerySchema) {}
+export class UploadUrlDto extends createZodDto(uploadUrlSchema) {}

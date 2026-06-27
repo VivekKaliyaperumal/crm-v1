@@ -14,16 +14,22 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:pull": "prisma db pull",
-    "prisma:studio": "prisma studio"
+    "prisma:studio": "prisma studio",
+    "openapi:generate": "ts-node src/openapi.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^11.0.0",
+    "@fastify/helmet": "^13.0.2",
     "@nestjs/common": "^11.0.0",
     "@nestjs/config": "^4.0.0",
     "@nestjs/core": "^11.0.0",
     "@nestjs/platform-fastify": "^11.0.0",
     "@nestjs/swagger": "^11.0.0",
+    "@nestjs/throttler": "^6.5.0",
     "@prisma/client": "^6.0.0",
+    "@sentry/node": "^10.62.0",
+    "@smartagro-crm/shared": "file:../shared",
+    "@supabase/supabase-js": "^2.108.2",
     "jose": "^5.9.0",
     "nestjs-zod": "^4.0.0",
     "reflect-metadata": "^0.2.2",

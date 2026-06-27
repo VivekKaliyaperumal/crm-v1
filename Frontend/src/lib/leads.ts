@@ -1,45 +1,18 @@
 'use client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  LEAD_STATUSES,
+  LEAD_SOURCES,
+  LEAD_STATUS_LABEL,
+  type LeadStatus,
+  type LeadSource,
+} from '@smartagro-crm/shared';
 import { apiFetch } from './api';
 
-export const LEAD_STATUSES = [
-  'new',
-  'contacted',
-  'interested',
-  'site_visit_scheduled',
-  'site_visit_completed',
-  'negotiation',
-  'booking',
-  'closed_won',
-  'closed_lost',
-  'not_interested',
-  'future_follow_up',
-] as const;
-export type LeadStatus = (typeof LEAD_STATUSES)[number];
-
-export const LEAD_SOURCES = [
-  'manual',
-  'web_form',
-  'import',
-  'referral',
-  'walk_in',
-  'other',
-] as const;
-export type LeadSource = (typeof LEAD_SOURCES)[number];
-
-export const STATUS_LABEL: Record<LeadStatus, string> = {
-  new: 'New',
-  contacted: 'Contacted',
-  interested: 'Interested',
-  site_visit_scheduled: 'Site Visit Scheduled',
-  site_visit_completed: 'Site Visit Completed',
-  negotiation: 'Negotiation',
-  booking: 'Booking',
-  closed_won: 'Closed Won',
-  closed_lost: 'Closed Lost',
-  not_interested: 'Not Interested',
-  future_follow_up: 'Future Follow-up',
-};
+// Re-exported from the shared package so existing imports keep working.
+export { LEAD_STATUSES, LEAD_SOURCES };
+export type { LeadStatus, LeadSource };
+export const STATUS_LABEL = LEAD_STATUS_LABEL;
 
 export interface Lead {
   id: string;
@@ -117,6 +90,27 @@ export function useCreateLead() {
   return useMutation({
     mutationFn: (input: CreateLeadInput) =>
       apiFetch<Lead>('leads', { method: 'POST', body: JSON.stringify(input) }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['leads'] }),
+  });
+}
+
+export function useUpdateLead(id: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: Partial<CreateLeadInput>) =>
+      apiFetch<Lead>(`leads/${id}`, { method: 'PATCH', body: JSON.stringify(input) }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['leads'] });
+      qc.invalidateQueries({ queryKey: ['lead', id] });
+    },
+  });
+}
+
+export function useDeleteLead() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      apiFetch<{ id: string; deleted: boolean }>(`leads/${id}`, { method: 'DELETE' }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['leads'] }),
   });
 }

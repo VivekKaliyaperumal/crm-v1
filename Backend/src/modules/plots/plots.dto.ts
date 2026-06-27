@@ -9,9 +9,9 @@ const plotStatusEnum = z.nativeEnum(PlotStatus);
 export const createPlotSchema = z.object({
   projectId: z.string().uuid(),
   plotNumber: z.string().trim().min(1, 'Plot number is required').max(60),
-  areaSqft: z.number().nonnegative(),
-  pricePerSqft: z.number().nonnegative().optional(),
-  totalPrice: z.number().nonnegative(),
+  areaSqft: z.coerce.number().nonnegative(),
+  pricePerSqft: z.coerce.number().nonnegative().optional(),
+  totalPrice: z.coerce.number().nonnegative(),
   facing: plotFacingEnum.optional(),
   status: plotStatusEnum.default(PlotStatus.available),
   block: z.string().trim().max(60).optional(),

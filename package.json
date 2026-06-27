@@ -2,12 +2,15 @@
   "name": "smartagro-crm",
   "version": "0.1.0",
   "private": true,
-  "description": "SmartAgro Land CRM — NestJS 11 + Prisma 6 + Next.js 16 on Supabase Postgres",
+  "description": "White-label CRM — NestJS 11 + Prisma 6 + Next.js 16 on Supabase Postgres",
   "scripts": {
-    "install:all": "npm --prefix Backend install && npm --prefix Frontend install",
+    "install:all": "npm --prefix shared install && npm --prefix shared run build && npm --prefix Backend install && npm --prefix Frontend install",
+    "build:shared": "npm --prefix shared run build",
     "dev:backend": "npm --prefix Backend run start:dev",
     "dev:frontend": "npm --prefix Frontend run dev",
-    "build": "npm --prefix Backend run build && npm --prefix Frontend run build",
-    "prisma:generate": "npm --prefix Backend run prisma:generate"
+    "build": "npm --prefix shared run build && npm --prefix Backend run build && npm --prefix Frontend run build",
+    "prisma:generate": "npm --prefix Backend run prisma:generate",
+    "test": "npm --prefix Backend run test",
+    "openapi": "npm --prefix Backend run openapi:generate && npm --prefix Frontend run api:types"
   }
 }

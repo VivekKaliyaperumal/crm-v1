@@ -3,6 +3,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { Plus, Search } from 'lucide-react';
 import { useResourceList, type Row } from '@/lib/resource';
+import { useMe, can } from '@/lib/me';
 import type { ColumnDef, ResourceConfig } from '@/lib/resource-registry';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,6 +26,9 @@ export function ResourceList({ config }: { config: ResourceConfig }) {
   const [page, setPage] = useState(1);
   const pageSize = 25;
 
+  const { data: me } = useMe();
+  const canCreate = can(me, config.slug, 'create');
+
   const { data, isLoading, isError, error } = useResourceList(config.apiPath, {
     ...(config.searchable && search ? { search } : {}),
     ...Object.fromEntries(Object.entries(filters).filter(([, v]) => v)),
@@ -42,11 +46,13 @@ export function ResourceList({ config }: { config: ResourceConfig }) {
           <h1 className="text-xl font-semibold text-slate-800">{config.title}</h1>
           <p className="text-sm text-slate-500">{data ? `${data.total} total` : 'Loading…'}</p>
         </div>
-        <Link href={`/app/${config.slug}/new`}>
-          <Button>
-            <Plus className="size-4" /> New {config.singular.toLowerCase()}
-          </Button>
-        </Link>
+        {canCreate && (
+          <Link href={`/app/${config.slug}/new`}>
+            <Button>
+              <Plus className="size-4" /> New {config.singular.toLowerCase()}
+            </Button>
+          </Link>
+        )}
       </div>
 
       {(config.searchable || config.filters?.length) && (

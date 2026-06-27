@@ -20,6 +20,7 @@ import {
   CreateDocumentDto,
   ListDocumentsQueryDto,
   UpdateDocumentDto,
+  UploadUrlDto,
 } from './documents.dto';
 
 @ApiTags('documents')
@@ -35,10 +36,22 @@ export class DocumentsController {
     return this.documents.list(user, query);
   }
 
+  @Post('upload-url')
+  @ApiOperation({ summary: 'Get a signed URL to upload a file (needs storage configured)' })
+  uploadUrl(@CurrentUser() user: AuthUser, @Body() dto: UploadUrlDto) {
+    return this.documents.createUploadTarget(user, dto.filename);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get a single document' })
   get(@CurrentUser() user: AuthUser, @Param('id', ParseUUIDPipe) id: string) {
     return this.documents.get(user, id);
+  }
+
+  @Get(':id/download-url')
+  @ApiOperation({ summary: 'Get a signed URL to download/view the file' })
+  downloadUrl(@CurrentUser() user: AuthUser, @Param('id', ParseUUIDPipe) id: string) {
+    return this.documents.getDownloadUrl(user, id);
   }
 
   @Post()

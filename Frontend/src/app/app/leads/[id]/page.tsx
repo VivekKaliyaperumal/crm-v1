@@ -1,10 +1,15 @@
 'use client';
-import { useParams } from 'next/navigation';
+import { useState } from 'react';
+import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
-import { useLead } from '@/lib/leads';
+import { ArrowLeft, Pencil, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { useLead, useDeleteLead } from '@/lib/leads';
+import { useMe, can } from '@/lib/me';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { StatusBadge } from '@/components/ui/status-badge';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { formatINR, formatDate, relativeTime } from '@/lib/format';
 
 interface Activity {
@@ -16,7 +21,25 @@ interface Activity {
 
 export default function LeadDetailPage() {
   const params = useParams<{ id: string }>();
+  const router = useRouter();
   const { data: lead, isLoading, isError, error } = useLead(params.id);
+  const del = useDeleteLead();
+  const { data: me } = useMe();
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const canEdit = can(me, 'leads', 'edit');
+  const canDelete = can(me, 'leads', 'delete');
+
+  async function onDelete() {
+    try {
+      await del.mutateAsync(params.id);
+      toast.success('Lead deleted');
+      router.push('/app/leads');
+      router.refresh();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not delete');
+      setConfirmOpen(false);
+    }
+  }
 
   if (isLoading) {
     return <div className="h-40 animate-pulse rounded-2xl bg-slate-100" />;
@@ -38,11 +61,28 @@ export default function LeadDetailPage() {
       </Link>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold text-slate-800">{lead.fullName}</h1>
-          <p className="text-sm text-slate-500">Added {formatDate(lead.createdAt)}</p>
+        <div className="flex items-center gap-3">
+          <div>
+            <h1 className="text-xl font-semibold text-slate-800">{lead.fullName}</h1>
+            <p className="text-sm text-slate-500">Added {formatDate(lead.createdAt)}</p>
+          </div>
+          <StatusBadge status={lead.status} />
         </div>
-        <StatusBadge status={lead.status} />
+        <div className="flex gap-2">
+          {canEdit && (
+            <Link href={`/app/leads/${params.id}/edit`}>
+              <Button variant="outline" size="sm">
+                <Pencil className="size-4" /> Edit
+              </Button>
+            </Link>
+          )}
+          {canDelete && (
+            <Button variant="outline" size="sm" onClick={() => setConfirmOpen(true)}>
+              <Trash2 className="size-4 text-rose-600" />
+              <span className="text-rose-600">Delete</span>
+            </Button>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
@@ -94,6 +134,15 @@ export default function LeadDetailPage() {
           </CardContent>
         </Card>
       </div>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        title="Delete this lead?"
+        description="This action cannot be undone."
+        loading={del.isPending}
+        onConfirm={onDelete}
+        onCancel={() => setConfirmOpen(false)}
+      />
     </div>
   );
 }
