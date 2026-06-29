@@ -12,6 +12,8 @@ import { AuditInterceptor } from './common/audit.interceptor';
 
 import { MeModule } from './modules/me/me.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
+import { ActivityModule } from './modules/activity/activity.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 import { PermissionsModule } from './modules/permissions/permissions.module';
 import { UsersModule } from './modules/users/users.module';
 import { OrganizationModule } from './modules/organization/organization.module';
@@ -39,6 +41,8 @@ import { FollowUpsModule } from './modules/follow-ups/follow-ups.module';
     AuthModule,
     MeModule,
     DashboardModule,
+    ActivityModule,
+    NotificationsModule,
     PermissionsModule,
     UsersModule,
     OrganizationModule,

@@ -45,6 +45,30 @@ export class CustomersService {
     return customer;
   }
 
+  /** Customer-360: every record linked to this customer, for a single screen. */
+  async related(user: AuthUser, id: string) {
+    const customer = await this.prisma.customer.findFirst({
+      where: { id, orgId: user.orgId },
+      select: { id: true },
+    });
+    if (!customer) throw new NotFoundException('Customer not found');
+
+    const orgId = user.orgId;
+    const recent = { orderBy: { createdAt: 'desc' as const }, take: 10 };
+    const [opportunities, deals, quotations, bookings, payments, receipts, documents] =
+      await this.prisma.$transaction([
+        this.prisma.opportunity.findMany({ where: { orgId, customerId: id }, ...recent }),
+        this.prisma.deal.findMany({ where: { orgId, customerId: id }, ...recent }),
+        this.prisma.quotation.findMany({ where: { orgId, customerId: id }, ...recent }),
+        this.prisma.booking.findMany({ where: { orgId, customerId: id }, ...recent }),
+        this.prisma.payment.findMany({ where: { orgId, customerId: id }, ...recent }),
+        this.prisma.receipt.findMany({ where: { orgId, customerId: id }, ...recent }),
+        this.prisma.document.findMany({ where: { orgId, entityId: id }, ...recent }),
+      ]);
+
+    return { opportunities, deals, quotations, bookings, payments, receipts, documents };
+  }
+
   async create(user: AuthUser, dto: CreateCustomerDto) {
     return this.prisma.customer.create({
       data: {

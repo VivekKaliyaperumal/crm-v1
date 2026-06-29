@@ -42,6 +42,12 @@ export class CustomersController {
     return this.customers.get(user, id);
   }
 
+  @Get(':id/related')
+  @ApiOperation({ summary: 'Customer-360: all records linked to this customer' })
+  related(@CurrentUser() user: AuthUser, @Param('id', ParseUUIDPipe) id: string) {
+    return this.customers.related(user, id);
+  }
+
   @Post()
   @ApiOperation({ summary: 'Create a customer' })
   create(@CurrentUser() user: AuthUser, @Body() dto: CreateCustomerDto) {

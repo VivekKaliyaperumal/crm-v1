@@ -11,6 +11,8 @@ import type { FieldDef, ResourceConfig } from '@/lib/resource-registry';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Pill } from '@/components/resource/pill';
+import { ActivityTimeline } from '@/components/resource/activity-timeline';
+import { RelatedRecords } from '@/components/resource/related-records';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { formatINR, formatDate } from '@/lib/format';
 
@@ -146,6 +148,10 @@ export function ResourceDetail({ config, id }: { config: ResourceConfig; id: str
           </dl>
         </CardContent>
       </Card>
+
+      {config.slug === 'customers' && <RelatedRecords customerId={id} />}
+
+      <ActivityTimeline entityType={config.apiPath} entityId={id} />
 
       <ConfirmDialog
         open={confirmOpen}

@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { APP_NAME } from '@/lib/app-config';
 import { useMe } from '@/lib/me';
 import { NavLinks } from '@/components/nav';
+import { NotificationsBell } from '@/components/notifications-bell';
 
 export function MobileNav() {
   const pathname = usePathname();
@@ -51,6 +52,7 @@ export function MobileNav() {
           </div>
           <span className="truncate text-sm font-semibold text-slate-800">{orgName}</span>
         </div>
+        <NotificationsBell tone="light" className="ml-auto" />
       </header>
 
       {/* Overlay */}

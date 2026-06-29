@@ -84,6 +84,63 @@
         ]
       }
     },
+    "/api/activity": {
+      "get": {
+        "operationId": "ActivityController_list",
+        "parameters": [
+          {
+            "name": "entityType",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "entityId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Activity timeline for an entity (from the audit trail)",
+        "tags": [
+          "activity"
+        ]
+      }
+    },
+    "/api/notifications": {
+      "get": {
+        "operationId": "NotificationsController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Reminders for the current user (due follow-ups, overdue payments, open tasks)",
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
     "/api/permissions": {
       "get": {
         "operationId": "PermissionsController_matrix",
@@ -518,6 +575,35 @@
           }
         ],
         "summary": "Delete a customer (managers only)",
+        "tags": [
+          "customers"
+        ]
+      }
+    },
+    "/api/customers/{id}/related": {
+      "get": {
+        "operationId": "CustomersController_related",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Customer-360: all records linked to this customer",
         "tags": [
           "customers"
         ]

@@ -41,18 +41,27 @@ async function bootstrap(): Promise<void> {
     .map((o) => o.trim());
   app.enableCors({ origin: corsOrigins, credentials: true });
 
-  const config = new DocumentBuilder()
-    .setTitle('SmartAgro CRM API')
-    .setDescription('Land CRM — leads, sales, inventory, billing')
-    .setVersion('0.1.0')
-    .addBearerAuth()
-    .build();
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api/docs', app, document);
+  // Swagger is exposed only outside production (or when explicitly enabled),
+  // so the full API surface isn't publicly enumerable in prod.
+  const swaggerEnabled =
+    process.env.NODE_ENV !== 'production' || process.env.ENABLE_SWAGGER === 'true';
+  if (swaggerEnabled) {
+    const config = new DocumentBuilder()
+      .setTitle('CRM API')
+      .setDescription('CRM — leads, sales, inventory, billing')
+      .setVersion('0.1.0')
+      .addBearerAuth()
+      .build();
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup('api/docs', app, document);
+  }
 
   const port = Number(process.env.PORT ?? 3001);
   await app.listen(port, '0.0.0.0');
-  Logger.log(`API running on http://localhost:${port}/api  (docs: /api/docs)`, 'Bootstrap');
+  Logger.log(
+    `API running on http://localhost:${port}/api${swaggerEnabled ? '  (docs: /api/docs)' : ''}`,
+    'Bootstrap',
+  );
 }
 
 void bootstrap();

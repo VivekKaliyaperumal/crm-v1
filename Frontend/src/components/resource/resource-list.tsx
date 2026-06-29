@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
-import { Plus, Search, Inbox } from 'lucide-react';
+import { Plus, Search, Inbox, Download } from 'lucide-react';
 import { useResourceList, type Row } from '@/lib/resource';
 import { useMe, can } from '@/lib/me';
 import type { ColumnDef, ResourceConfig } from '@/lib/resource-registry';
@@ -13,6 +13,39 @@ import { formatINR, formatDate } from '@/lib/format';
 
 const selectCls =
   'h-10 rounded-xl border border-slate-200 bg-white/90 px-3 text-sm text-slate-700 shadow-sm transition-all hover:border-slate-300 focus-visible:border-emerald-400 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-500/15';
+
+/** Escape a single CSV cell: wrap in quotes and double internal quotes when it
+ * contains a comma, quote, or newline. */
+function csvCell(value: unknown): string {
+  const s = value === null || value === undefined ? '' : String(value);
+  if (/[",\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+  return s;
+}
+
+function exportCsv(config: ResourceConfig, rows: Row[]) {
+  const header = config.columns.map((c) => csvCell(c.label));
+  const lines = rows.map((row) =>
+    config.columns
+      .map((col) => {
+        const value = row[col.key];
+        // Money: keep the raw numeric value as-is. Date: format to dd-MMM-yyyy.
+        if (col.type === 'date') return csvCell(formatDate(value as string));
+        return csvCell(value);
+      })
+      .join(','),
+  );
+  const csv = [header.join(','), ...lines].join('\n');
+
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${config.slug}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
 
 function renderCell(row: Row, col: ColumnDef) {
   const value = row[col.key];
@@ -51,13 +84,20 @@ export function ResourceList({ config }: { config: ResourceConfig }) {
             {data ? `${data.total} ${data.total === 1 ? 'record' : 'records'}` : 'Loading…'}
           </p>
         </div>
-        {canCreate && (
-          <Link href={`/app/${config.slug}/new`}>
-            <Button>
-              <Plus className="size-4" /> New {config.singular.toLowerCase()}
+        <div className="flex items-center gap-2">
+          {(data?.data.length ?? 0) > 0 && (
+            <Button variant="outline" onClick={() => exportCsv(config, data?.data ?? [])}>
+              <Download className="size-4" /> Export
             </Button>
-          </Link>
-        )}
+          )}
+          {canCreate && (
+            <Link href={`/app/${config.slug}/new`}>
+              <Button>
+                <Plus className="size-4" /> New {config.singular.toLowerCase()}
+              </Button>
+            </Link>
+          )}
+        </div>
       </div>
 
       {(config.searchable || config.filters?.length) && (

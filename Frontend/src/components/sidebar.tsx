@@ -5,6 +5,7 @@ import { Boxes, LogOut } from 'lucide-react';
 import { APP_NAME } from '@/lib/app-config';
 import { useMe } from '@/lib/me';
 import { NavLinks } from '@/components/nav';
+import { NotificationsBell } from '@/components/notifications-bell';
 
 function initials(name: string | null | undefined, email: string | null | undefined): string {
   const base = name ?? email ?? '?';
@@ -38,10 +39,11 @@ export function Sidebar() {
         <div className="grid size-10 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-600 text-white shadow-lg shadow-emerald-500/30 ring-1 ring-white/20">
           <Boxes className="size-5" />
         </div>
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <div className="truncate text-sm font-semibold tracking-tight text-white">{orgName}</div>
           <div className="text-[10px] uppercase tracking-[0.18em] text-emerald-300/70">{APP_NAME}</div>
         </div>
+        <NotificationsBell />
       </div>
 
       <nav className="flex-1 overflow-y-auto px-3 pb-3">
