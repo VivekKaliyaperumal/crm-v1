@@ -37,8 +37,10 @@ const ROLE_SCOPED = p(ALL, ALL, ALL, MANAGERS);
 const OWNER_WRITE = p(ALL, ALL, ALL, MANAGERS);
 // "Org read, manager-only manage" (projects/plots/campaigns).
 const MANAGER_MANAGE = p(ALL, MANAGERS, MANAGERS, MANAGERS);
-// "Org read, any-member manage" (quotations/bookings/payments/receipts/documents).
+// "Org read, any-member manage" (quotations/documents).
 const MEMBER_MANAGE = p(ALL, ALL, ALL, ALL);
+// "Org read, any-member create/edit, MANAGER-only delete" — financial records.
+const MEMBER_MANAGE_MGR_DELETE = p(ALL, ALL, ALL, MANAGERS);
 
 export const MODULES: ModuleDef[] = [
   { key: 'dashboard', label: 'Dashboard', perms: p(ALL, [], [], []) },
@@ -52,9 +54,9 @@ export const MODULES: ModuleDef[] = [
   { key: 'follow-ups', label: 'Follow-ups', perms: ROLE_SCOPED },
   { key: 'tasks', label: 'Tasks', perms: ROLE_SCOPED },
   { key: 'quotations', label: 'Quotations', perms: MEMBER_MANAGE },
-  { key: 'bookings', label: 'Bookings', perms: MEMBER_MANAGE },
-  { key: 'payments', label: 'Payments', perms: MEMBER_MANAGE },
-  { key: 'receipts', label: 'Receipts', perms: MEMBER_MANAGE },
+  { key: 'bookings', label: 'Bookings', perms: MEMBER_MANAGE_MGR_DELETE },
+  { key: 'payments', label: 'Payments', perms: MEMBER_MANAGE_MGR_DELETE },
+  { key: 'receipts', label: 'Receipts', perms: MEMBER_MANAGE_MGR_DELETE },
   { key: 'campaigns', label: 'Campaigns', perms: MANAGER_MANAGE },
   { key: 'documents', label: 'Documents', perms: MEMBER_MANAGE },
   { key: 'team', label: 'Team', perms: p(ADMIN, ADMIN, ADMIN, ADMIN) },

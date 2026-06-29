@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { assertInOrg } from '../../common/org-refs';
@@ -165,6 +165,14 @@ export class BookingsService {
       select: { id: true },
     });
     if (!existing) throw new NotFoundException('Booking not found');
+
+    // Guard against silent cascade loss of financial records.
+    const paymentCount = await this.prisma.payment.count({ where: { bookingId: id } });
+    if (paymentCount > 0) {
+      throw new ConflictException(
+        'Cannot delete a booking that has payments. Remove its payments first.',
+      );
+    }
 
     await this.prisma.booking.delete({ where: { id } });
     return { id, deleted: true };

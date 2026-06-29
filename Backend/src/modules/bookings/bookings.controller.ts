@@ -13,6 +13,7 @@ import {
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AuthGuard } from '../../auth/auth.guard';
 import { RolesGuard } from '../../auth/roles.guard';
+import { Roles } from '../../auth/roles.decorator';
 import { CurrentUser } from '../../auth/current-user.decorator';
 import type { AuthUser } from '../../auth/auth-user.interface';
 import { BookingsService } from './bookings.service';
@@ -58,7 +59,8 @@ export class BookingsController {
   }
 
   @Delete(':id')
-  @ApiOperation({ summary: 'Delete a booking' })
+  @Roles('admin', 'sales_manager')
+  @ApiOperation({ summary: 'Delete a booking (managers only)' })
   remove(@CurrentUser() user: AuthUser, @Param('id', ParseUUIDPipe) id: string) {
     return this.bookings.remove(user, id);
   }
