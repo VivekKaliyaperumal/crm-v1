@@ -52,7 +52,7 @@ function FileField({
   }
 
   return (
-    <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-600 transition-colors hover:border-emerald-400 hover:bg-emerald-50/40">
+    <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-dashed border-slate-300 bg-slate-50/80 px-4 py-4 text-sm text-slate-600 transition-colors hover:border-emerald-400 hover:bg-emerald-50/50">
       {uploading ? (
         <Loader2 className="size-4 animate-spin text-emerald-600" />
       ) : currentValue ? (
@@ -69,7 +69,7 @@ function FileField({
 }
 
 const selectCls =
-  'h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 transition-colors focus-visible:border-emerald-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30';
+  'h-10 w-full rounded-xl border border-slate-200 bg-white/90 px-3 text-sm text-slate-700 shadow-sm transition-all hover:border-slate-300 focus-visible:border-emerald-400 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-500/15';
 
 function toFieldString(value: unknown, type: FieldDef['type']): string {
   if (value === null || value === undefined) return '';
@@ -174,12 +174,17 @@ export function ResourceForm({
       >
         <ArrowLeft className="size-4" /> Back
       </Link>
-      <h1 className="text-xl font-semibold text-slate-800">
-        {isEdit ? `Edit ${config.singular.toLowerCase()}` : `New ${config.singular.toLowerCase()}`}
-      </h1>
+      <div>
+        <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
+          {isEdit ? `Edit ${config.singular.toLowerCase()}` : `New ${config.singular.toLowerCase()}`}
+        </h1>
+        <p className="mt-0.5 text-sm text-slate-500">
+          {isEdit ? 'Update the details below and save your changes.' : `Fill in the details to create a new ${config.singular.toLowerCase()}.`}
+        </p>
+      </div>
 
       <Card>
-        <CardContent className="pt-5">
+        <CardContent className="pt-6">
           <form onSubmit={onSubmit} className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {config.fields.map((f) => {
               if (f.hidden) return null;
@@ -195,7 +200,7 @@ export function ResourceForm({
                       rows={3}
                       value={values[f.key] ?? ''}
                       onChange={(e) => set(f.key, e.target.value)}
-                      className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 transition-colors focus-visible:border-emerald-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30"
+                      className="w-full rounded-xl border border-slate-200 bg-white/90 px-3.5 py-2.5 text-sm text-slate-700 shadow-sm transition-all hover:border-slate-300 focus-visible:border-emerald-400 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-500/15"
                     />
                   ) : f.type === 'select' ? (
                     <select

@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Boxes, Mail, Lock, Eye, EyeOff, Users, Target, ClipboardCheck, Loader2 } from 'lucide-react';
+import { Boxes, Mail, Lock, Eye, EyeOff, Users, Target, ClipboardCheck, Loader2, ShieldCheck } from 'lucide-react';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 import { APP_NAME } from '@/lib/app-config';
 import { Button } from '@/components/ui/button';
@@ -49,51 +49,52 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="grid min-h-screen lg:grid-cols-2">
+    <div className="grid min-h-screen lg:grid-cols-[1.05fr_1fr]">
       {/* ─── Brand / hero panel ─── */}
-      <div className="relative hidden overflow-hidden bg-slate-950 lg:block">
-        <div className="absolute inset-0 bg-gradient-to-br from-emerald-700 via-emerald-800 to-slate-950" />
-        <div className="absolute -left-20 top-10 size-96 rounded-full bg-emerald-400/30 blur-3xl animate-blob" />
-        <div className="absolute right-0 top-40 size-80 rounded-full bg-teal-300/20 blur-3xl animate-blob animation-delay-2000" />
-        <div className="absolute bottom-0 left-1/3 size-96 rounded-full bg-cyan-300/20 blur-3xl animate-blob animation-delay-4000" />
-        <div
-          className="absolute inset-0 opacity-[0.18]"
-          style={{
-            backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.35) 1px, transparent 1px)',
-            backgroundSize: '26px 26px',
-          }}
-        />
+      <div className="bg-brand-ink relative hidden overflow-hidden lg:block">
+        {/* glow orbs */}
+        <div className="animate-blob absolute -left-24 top-0 size-[28rem] rounded-full bg-emerald-400/35 blur-3xl" />
+        <div className="animate-blob animation-delay-2000 absolute right-0 top-1/3 size-[26rem] rounded-full bg-teal-300/25 blur-3xl" />
+        <div className="animate-blob animation-delay-4000 absolute -bottom-24 left-1/3 size-[30rem] rounded-full bg-cyan-300/20 blur-3xl" />
+        {/* dotted grid */}
+        <div className="bg-grid absolute inset-0 opacity-60" />
+        {/* top sheen */}
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
 
         <div className="relative flex h-full flex-col justify-between p-12 text-white">
           <div className="flex items-center gap-3">
-            <div className="grid size-10 place-items-center rounded-xl bg-white/15 backdrop-blur-sm ring-1 ring-white/20">
+            <div className="grid size-11 place-items-center rounded-2xl bg-white/10 backdrop-blur-sm ring-1 ring-white/20">
               <Boxes className="size-5" />
             </div>
             <div className="text-sm font-semibold tracking-tight">{APP_NAME}</div>
           </div>
 
           <div className="max-w-md">
-            <h1 className="text-3xl font-semibold leading-tight tracking-tight">
+            <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-emerald-100 ring-1 ring-white/15 backdrop-blur-sm">
+              <span className="size-1.5 rounded-full bg-emerald-300 shadow-[0_0_8px_2px_rgba(110,231,183,0.7)]" />
+              Your workspace, beautifully organised
+            </div>
+            <h1 className="text-[2.7rem] font-semibold leading-[1.05] tracking-tight">
               Your sales pipeline,
               <br />
-              all in one place.
+              <span className="text-gradient">all in one place.</span>
             </h1>
-            <p className="mt-4 text-sm leading-relaxed text-white/70">
-              From first contact to closed deal — leads, customers and tasks, organised
-              in one dependable workspace for your whole team.
+            <p className="mt-5 max-w-sm text-sm leading-relaxed text-white/65">
+              From first contact to closed deal — leads, customers and tasks, organised in
+              one dependable workspace for your whole team.
             </p>
 
-            <div className="mt-10 space-y-5">
+            <div className="mt-10 space-y-4">
               {HIGHLIGHTS.map((h) => {
                 const Icon = h.icon;
                 return (
-                  <div key={h.title} className="flex items-start gap-3">
-                    <div className="mt-0.5 grid size-9 shrink-0 place-items-center rounded-lg bg-white/10 ring-1 ring-white/15">
-                      <Icon className="size-[18px]" />
+                  <div key={h.title} className="flex items-start gap-3.5">
+                    <div className="mt-0.5 grid size-10 shrink-0 place-items-center rounded-xl bg-white/10 ring-1 ring-white/15 backdrop-blur-sm">
+                      <Icon className="size-[18px] text-emerald-200" />
                     </div>
                     <div>
                       <div className="text-sm font-medium">{h.title}</div>
-                      <div className="text-xs leading-relaxed text-white/60">{h.text}</div>
+                      <div className="text-xs leading-relaxed text-white/55">{h.text}</div>
                     </div>
                   </div>
                 );
@@ -101,36 +102,38 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <div className="text-xs text-white/40">
-            © {new Date().getFullYear()} {APP_NAME}
+          <div className="flex items-center gap-2 text-xs text-white/40">
+            <ShieldCheck className="size-3.5" />
+            <span>© {new Date().getFullYear()} {APP_NAME} · Secure, role-based access</span>
           </div>
         </div>
       </div>
 
       {/* ─── Sign-in panel ─── */}
-      <div className="relative flex items-center justify-center bg-slate-50 px-4 py-12">
-        <div className="pointer-events-none absolute left-1/2 top-1/3 size-72 -translate-x-1/2 rounded-full bg-emerald-200/40 blur-3xl" />
+      <div className="relative flex items-center justify-center overflow-hidden bg-gradient-to-b from-white to-slate-50 px-4 py-12">
+        <div className="pointer-events-none absolute -right-16 top-0 size-72 rounded-full bg-emerald-200/40 blur-3xl" />
+        <div className="pointer-events-none absolute -left-16 bottom-0 size-72 rounded-full bg-teal-100/50 blur-3xl" />
 
-        <div className="relative w-full max-w-sm">
-          {/* mobile-only brand mark */}
-          <div className="mb-8 flex flex-col items-center gap-3 text-center lg:hidden">
-            <div className="grid size-12 place-items-center rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-700 text-white shadow-lg shadow-emerald-600/20">
-              <Boxes className="size-6" />
+        <div className="animate-fade-in-up relative w-full max-w-md">
+          {/* brand mark (always visible, doubles for mobile) */}
+          <div className="mb-8 flex flex-col items-center gap-3 text-center">
+            <div className="grid size-14 place-items-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-600/30 ring-1 ring-white/40">
+              <Boxes className="size-7" />
             </div>
-            <div className="text-lg font-semibold text-slate-800">{APP_NAME}</div>
+            <div className="text-base font-semibold tracking-tight text-slate-800 lg:hidden">{APP_NAME}</div>
           </div>
 
-          <div className="rounded-2xl border border-slate-200/80 bg-white/90 p-7 shadow-xl shadow-slate-200/60 backdrop-blur">
-            <div className="mb-6">
-              <h2 className="text-xl font-semibold text-slate-800">Welcome back</h2>
-              <p className="mt-1 text-sm text-slate-500">Sign in to your workspace</p>
+          <div className="glass rounded-3xl p-8 shadow-[0_30px_60px_-20px_rgba(15,23,42,0.25)]">
+            <div className="mb-7 text-center">
+              <h2 className="text-2xl font-semibold tracking-tight text-slate-900">Welcome back</h2>
+              <p className="mt-1.5 text-sm text-slate-500">Sign in to your workspace</p>
             </div>
 
             <form onSubmit={onSubmit} className="space-y-4">
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-slate-700">Email</label>
                 <div className="relative">
-                  <Mail className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+                  <Mail className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
                   <input
                     type="email"
                     value={email}
@@ -138,7 +141,7 @@ export default function LoginPage() {
                     placeholder="you@company.com"
                     required
                     autoComplete="email"
-                    className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-3 text-sm shadow-sm transition-colors placeholder:text-slate-400 focus-visible:border-emerald-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30"
+                    className="h-12 w-full rounded-xl border border-slate-200 bg-white/80 pl-10 pr-3 text-sm shadow-sm transition-all placeholder:text-slate-400 hover:border-slate-300 focus-visible:border-emerald-400 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-500/15"
                   />
                 </div>
               </div>
@@ -146,7 +149,7 @@ export default function LoginPage() {
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-slate-700">Password</label>
                 <div className="relative">
-                  <Lock className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+                  <Lock className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
                   <input
                     type={showPassword ? 'text' : 'password'}
                     value={password}
@@ -154,7 +157,7 @@ export default function LoginPage() {
                     placeholder="••••••••"
                     required
                     autoComplete="current-password"
-                    className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-10 text-sm shadow-sm transition-colors placeholder:text-slate-400 focus-visible:border-emerald-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30"
+                    className="h-12 w-full rounded-xl border border-slate-200 bg-white/80 pl-10 pr-10 text-sm shadow-sm transition-all placeholder:text-slate-400 hover:border-slate-300 focus-visible:border-emerald-400 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-500/15"
                   />
                   <button
                     type="button"
@@ -168,12 +171,12 @@ export default function LoginPage() {
               </div>
 
               {error && (
-                <div className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+                <div className="animate-fade-in rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-2.5 text-sm text-rose-700">
                   {error}
                 </div>
               )}
 
-              <Button type="submit" className="h-11 w-full rounded-xl text-sm" disabled={loading}>
+              <Button type="submit" size="lg" className="w-full" disabled={loading}>
                 {loading ? (
                   <>
                     <Loader2 className="size-4 animate-spin" /> Signing in…
@@ -185,7 +188,8 @@ export default function LoginPage() {
             </form>
           </div>
 
-          <p className="mt-6 text-center text-xs text-slate-400">
+          <p className="mt-6 flex items-center justify-center gap-1.5 text-center text-xs text-slate-400">
+            <ShieldCheck className="size-3.5" />
             Protected workspace · Authorised users only
           </p>
         </div>

@@ -30,14 +30,17 @@ export function Sidebar() {
   const orgName = me?.org?.name ?? 'Workspace';
 
   return (
-    <aside className="hidden md:flex md:w-64 md:flex-col border-r border-slate-200 bg-white">
-      <div className="flex items-center gap-3 px-5 py-4">
-        <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-700 text-white shadow-md shadow-emerald-600/20">
-          <Boxes className="size-4" />
+    <aside className="bg-brand-ink relative hidden w-64 flex-col border-r border-white/5 md:flex">
+      {/* top sheen line */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/15 to-transparent" />
+
+      <div className="flex items-center gap-3 px-5 py-5">
+        <div className="grid size-10 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-600 text-white shadow-lg shadow-emerald-500/30 ring-1 ring-white/20">
+          <Boxes className="size-5" />
         </div>
         <div className="min-w-0">
-          <div className="truncate text-sm font-semibold tracking-tight text-slate-800">{orgName}</div>
-          <div className="text-[10px] uppercase tracking-[0.16em] text-slate-400">{APP_NAME}</div>
+          <div className="truncate text-sm font-semibold tracking-tight text-white">{orgName}</div>
+          <div className="text-[10px] uppercase tracking-[0.18em] text-emerald-300/70">{APP_NAME}</div>
         </div>
       </div>
 
@@ -45,25 +48,25 @@ export function Sidebar() {
         <NavLinks pathname={pathname} roles={me?.roles ?? []} />
       </nav>
 
-      <div className="border-t border-slate-100 p-3">
-        <div className="flex items-center gap-3 rounded-xl px-2 py-2">
+      <div className="border-t border-white/5 p-3">
+        <div className="glass-dark flex items-center gap-3 rounded-2xl px-2.5 py-2.5">
           <Link
             href="/app/profile"
-            className="flex min-w-0 flex-1 items-center gap-3 rounded-lg transition-colors hover:opacity-80"
+            className="flex min-w-0 flex-1 items-center gap-3 rounded-lg transition-opacity hover:opacity-80"
           >
-            <div className="grid size-9 shrink-0 place-items-center rounded-full bg-gradient-to-br from-emerald-500/80 to-emerald-700/70 text-xs font-semibold text-white">
+            <div className="grid size-9 shrink-0 place-items-center rounded-full bg-gradient-to-br from-emerald-400 to-teal-600 text-xs font-semibold text-white ring-1 ring-white/20">
               {initials(me?.fullName, me?.email)}
             </div>
             <div className="min-w-0 flex-1">
-              <div className="truncate text-sm font-medium text-slate-700">
+              <div className="truncate text-sm font-medium text-white">
                 {me?.fullName ?? me?.email ?? 'Loading…'}
               </div>
-              <div className="truncate text-[11px] text-slate-400">{me?.email ?? ''}</div>
+              <div className="truncate text-[11px] text-white/45">{me?.email ?? ''}</div>
             </div>
           </Link>
           <button
             onClick={signOut}
-            className="grid size-8 shrink-0 place-items-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
+            className="grid size-8 shrink-0 place-items-center rounded-lg text-white/50 transition-colors hover:bg-white/10 hover:text-white"
             aria-label="Sign out"
           >
             <LogOut className="size-4" />

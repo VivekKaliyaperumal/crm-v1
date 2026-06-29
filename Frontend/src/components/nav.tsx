@@ -75,10 +75,10 @@ export function NavLinks({
   const isAdmin = roles.includes('admin');
   const groups = NAV_GROUPS.filter((g) => !g.admin || isAdmin);
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {groups.map((group) => (
         <div key={group.label}>
-          <div className="px-2 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+          <div className="px-3 pb-1.5 pt-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/35">
             {group.label}
           </div>
           <div className="space-y-0.5">
@@ -91,13 +91,21 @@ export function NavLinks({
                   href={item.to}
                   onClick={onNavigate}
                   className={cn(
-                    'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                    'group relative flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-all duration-200',
                     active
-                      ? 'bg-emerald-50 text-emerald-700'
-                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900',
+                      ? 'bg-white/10 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] ring-1 ring-inset ring-white/10'
+                      : 'text-white/65 hover:bg-white/5 hover:text-white',
                   )}
                 >
-                  <Icon className={cn('size-[17px] shrink-0', active && 'text-emerald-600')} />
+                  {active && (
+                    <span className="absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-gradient-to-b from-emerald-300 to-teal-400 shadow-[0_0_12px_2px_rgba(52,211,153,0.6)]" />
+                  )}
+                  <Icon
+                    className={cn(
+                      'size-[18px] shrink-0 transition-colors',
+                      active ? 'text-emerald-300' : 'text-white/45 group-hover:text-white/80',
+                    )}
+                  />
                   <span className="truncate">{item.label}</span>
                 </Link>
               );

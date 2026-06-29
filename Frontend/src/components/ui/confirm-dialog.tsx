@@ -36,16 +36,16 @@ export function ConfirmDialog({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div
-        className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in"
+        className="absolute inset-0 bg-slate-950/50 backdrop-blur-sm animate-fade-in"
         onClick={() => !loading && onCancel()}
       />
       <div
         role="dialog"
         aria-modal="true"
-        className="relative w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl animate-fade-in-up"
+        className="relative w-full max-w-sm rounded-3xl border border-slate-200/70 bg-white p-6 shadow-[0_30px_60px_-15px_rgba(15,23,42,0.35)] animate-fade-in-up"
       >
         <div className="flex items-start gap-3">
-          <div className="grid size-10 shrink-0 place-items-center rounded-full bg-rose-50 text-rose-600">
+          <div className="grid size-11 shrink-0 place-items-center rounded-2xl bg-rose-50 text-rose-600 ring-1 ring-rose-100">
             <AlertTriangle className="size-5" />
           </div>
           <div className="min-w-0">

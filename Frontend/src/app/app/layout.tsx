@@ -10,12 +10,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     redirect('/login');
   }
   return (
-    <div className="flex h-screen bg-slate-50">
+    <div className="flex h-screen overflow-hidden">
       <Sidebar />
       <div className="flex min-w-0 flex-1 flex-col">
         <MobileNav />
         <main className="flex-1 overflow-y-auto">
-          <div className="mx-auto w-full max-w-7xl px-4 py-6 md:px-8 md:py-8">
+          <div className="mx-auto w-full max-w-7xl px-4 py-6 md:px-8 md:py-9">
             <RouteTransition>{children}</RouteTransition>
           </div>
         </main>

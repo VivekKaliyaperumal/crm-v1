@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
-import { Plus, Search } from 'lucide-react';
+import { Plus, Search, Inbox } from 'lucide-react';
 import { useResourceList, type Row } from '@/lib/resource';
 import { useMe, can } from '@/lib/me';
 import type { ColumnDef, ResourceConfig } from '@/lib/resource-registry';
@@ -10,6 +10,9 @@ import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Pill } from '@/components/resource/pill';
 import { formatINR, formatDate } from '@/lib/format';
+
+const selectCls =
+  'h-10 rounded-xl border border-slate-200 bg-white/90 px-3 text-sm text-slate-700 shadow-sm transition-all hover:border-slate-300 focus-visible:border-emerald-400 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-500/15';
 
 function renderCell(row: Row, col: ColumnDef) {
   const value = row[col.key];
@@ -43,8 +46,10 @@ export function ResourceList({ config }: { config: ResourceConfig }) {
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold text-slate-800">{config.title}</h1>
-          <p className="text-sm text-slate-500">{data ? `${data.total} total` : 'Loading…'}</p>
+          <h1 className="text-2xl font-semibold tracking-tight text-slate-900">{config.title}</h1>
+          <p className="mt-0.5 text-sm text-slate-500">
+            {data ? `${data.total} ${data.total === 1 ? 'record' : 'records'}` : 'Loading…'}
+          </p>
         </div>
         {canCreate && (
           <Link href={`/app/${config.slug}/new`}>
@@ -58,16 +63,16 @@ export function ResourceList({ config }: { config: ResourceConfig }) {
       {(config.searchable || config.filters?.length) && (
         <div className="flex flex-wrap items-center gap-2">
           {config.searchable && (
-            <div className="relative min-w-[220px] flex-1">
-              <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+            <div className="relative min-w-[240px] flex-1">
+              <Search className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
               <Input
                 value={search}
                 onChange={(e) => {
                   setSearch(e.target.value);
                   setPage(1);
                 }}
-                placeholder="Search…"
-                className="pl-9"
+                placeholder={`Search ${config.title.toLowerCase()}…`}
+                className="pl-10"
               />
             </div>
           )}
@@ -79,7 +84,7 @@ export function ResourceList({ config }: { config: ResourceConfig }) {
                 setFilters((prev) => ({ ...prev, [f.key]: e.target.value }));
                 setPage(1);
               }}
-              className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40"
+              className={selectCls}
             >
               <option value="">All {f.label.toLowerCase()}</option>
               {f.options.map((o) => (
@@ -92,31 +97,31 @@ export function ResourceList({ config }: { config: ResourceConfig }) {
         </div>
       )}
 
-      <Card className="overflow-hidden">
+      <Card className="overflow-hidden p-0">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-slate-100 text-left text-xs uppercase tracking-wide text-slate-400">
+              <tr className="border-b border-slate-200/70 bg-slate-50/70 text-left text-[11px] uppercase tracking-wider text-slate-500">
                 {config.columns.map((c) => (
-                  <th key={c.key} className="px-4 py-3 font-medium">
+                  <th key={c.key} className="px-4 py-3 font-semibold">
                     {c.label}
                   </th>
                 ))}
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-slate-100">
               {isLoading &&
-                Array.from({ length: 6 }).map((_, i) => (
-                  <tr key={i} className="border-b border-slate-50">
-                    <td colSpan={colCount} className="px-4 py-3">
-                      <div className="h-5 w-full animate-pulse rounded bg-slate-100" />
+                Array.from({ length: 8 }).map((_, i) => (
+                  <tr key={i}>
+                    <td colSpan={colCount} className="px-4 py-3.5">
+                      <div className="shimmer h-5 w-full rounded" />
                     </td>
                   </tr>
                 ))}
 
               {isError && (
                 <tr>
-                  <td colSpan={colCount} className="px-4 py-10 text-center text-sm text-rose-600">
+                  <td colSpan={colCount} className="px-4 py-12 text-center text-sm text-rose-600">
                     {error instanceof Error ? error.message : 'Failed to load'}
                   </td>
                 </tr>
@@ -124,20 +129,34 @@ export function ResourceList({ config }: { config: ResourceConfig }) {
 
               {data?.data.length === 0 && (
                 <tr>
-                  <td colSpan={colCount} className="px-4 py-12 text-center text-sm text-slate-400">
-                    No {config.title.toLowerCase()} found.
+                  <td colSpan={colCount} className="px-4 py-16 text-center">
+                    <div className="mx-auto flex max-w-xs flex-col items-center gap-3">
+                      <div className="grid size-12 place-items-center rounded-2xl bg-slate-100 text-slate-400">
+                        <Inbox className="size-6" />
+                      </div>
+                      <div className="text-sm font-medium text-slate-600">
+                        No {config.title.toLowerCase()} yet
+                      </div>
+                      {canCreate && (
+                        <Link href={`/app/${config.slug}/new`}>
+                          <Button size="sm" variant="outline">
+                            <Plus className="size-4" /> Add the first one
+                          </Button>
+                        </Link>
+                      )}
+                    </div>
                   </td>
                 </tr>
               )}
 
               {data?.data.map((row) => (
-                <tr key={row.id} className="border-b border-slate-50 hover:bg-slate-50/60">
+                <tr key={row.id} className="group transition-colors hover:bg-emerald-50/40">
                   {config.columns.map((c, idx) => (
-                    <td key={c.key} className="px-4 py-3 text-slate-600">
+                    <td key={c.key} className="px-4 py-3.5 text-slate-600">
                       {idx === 0 ? (
                         <Link
                           href={`/app/${config.slug}/${row.id}`}
-                          className="font-medium text-slate-800 hover:text-emerald-700"
+                          className="font-medium text-slate-800 transition-colors group-hover:text-emerald-700"
                         >
                           {renderCell(row, c)}
                         </Link>

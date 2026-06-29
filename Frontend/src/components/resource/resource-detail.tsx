@@ -42,7 +42,7 @@ export function ResourceDetail({ config, id }: { config: ResourceConfig; id: str
     }
   }
 
-  if (isLoading) return <div className="h-40 animate-pulse rounded-2xl bg-slate-100" />;
+  if (isLoading) return <div className="shimmer h-48 rounded-2xl" />;
   if (isError || !data) {
     return (
       <div className="text-sm text-rose-600">
@@ -67,7 +67,7 @@ export function ResourceDetail({ config, id }: { config: ResourceConfig; id: str
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <h1 className="text-xl font-semibold text-slate-800">
+          <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
             {String(data[titleKey] ?? config.singular)}
           </h1>
           {statusField && <Pill value={data[statusField.key] as string} />}
@@ -105,16 +105,16 @@ export function ResourceDetail({ config, id }: { config: ResourceConfig; id: str
         </div>
       </div>
 
-      <Card>
-        <CardHeader>
+      <Card className="overflow-hidden">
+        <CardHeader className="border-b border-slate-100 bg-slate-50/50">
           <CardTitle>{config.singular} details</CardTitle>
         </CardHeader>
-        <CardContent>
-          <dl className="grid grid-cols-1 gap-x-8 gap-y-3 sm:grid-cols-2">
+        <CardContent className="pt-5">
+          <dl className="grid grid-cols-1 gap-x-10 gap-y-4 sm:grid-cols-2">
             {config.fields.map((f) => (
-              <div key={f.key} className="flex flex-col">
-                <dt className="text-xs uppercase tracking-wide text-slate-400">{f.label}</dt>
-                <dd className="text-sm text-slate-700">
+              <div key={f.key} className="flex flex-col gap-1 border-b border-slate-100/80 pb-3 last:border-0">
+                <dt className="text-[11px] font-medium uppercase tracking-wider text-slate-400">{f.label}</dt>
+                <dd className="text-sm font-medium text-slate-700">
                   {f.type === 'select' || f.key === 'channel' || f.key === 'mode' ? (
                     <Pill value={data[f.key] as string} />
                   ) : (

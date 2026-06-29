@@ -1,8 +1,30 @@
 @import 'tailwindcss';
 
+/* ============================================================
+   Design tokens — "Bold & premium" emerald/teal identity.
+   Brand stays green (white-label friendly); depth comes from
+   gradients, glass, glow and layered shadow rather than colour
+   sprawl. Override --brand-* to re-skin the whole product.
+   ============================================================ */
 :root {
-  --background: oklch(0.99 0.005 120);
-  --foreground: oklch(0.2 0.02 150);
+  --background: oklch(0.99 0.006 150);
+  --foreground: oklch(0.21 0.03 165);
+
+  /* Brand ramp (emerald → teal) */
+  --brand-50: #ecfdf5;
+  --brand-100: #d1fae5;
+  --brand-300: #6ee7b7;
+  --brand-400: #34d399;
+  --brand-500: #10b981;
+  --brand-600: #059669;
+  --brand-700: #047857;
+  --brand-800: #065f46;
+  --brand-900: #064e3b;
+
+  /* Premium dark "ink" surface used for sidebar + hero panels */
+  --ink-900: #05140e;
+  --ink-800: #07251a;
+  --ink-700: #0b3326;
 }
 
 @theme inline {
@@ -16,11 +38,16 @@ body {
 }
 
 body {
-  background: var(--background);
+  background:
+    radial-gradient(60rem 60rem at 110% -10%, color-mix(in oklab, var(--brand-400) 12%, transparent), transparent 60%),
+    radial-gradient(50rem 50rem at -10% 110%, color-mix(in oklab, var(--brand-500) 9%, transparent), transparent 55%),
+    var(--background);
+  background-attachment: fixed;
   color: var(--foreground);
   font-family: var(--font-sans), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  letter-spacing: -0.011em;
 }
 
 /* Tabular figures keep money/number columns aligned. */
@@ -28,7 +55,89 @@ table {
   font-variant-numeric: tabular-nums;
 }
 
-/* Neat, unobtrusive scrollbars (thin, themed) — the "scroller" polish. */
+/* ============================================================
+   Premium utility classes
+   ============================================================ */
+
+/* Frosted glass for cards floating over rich backgrounds. */
+.glass {
+  background: color-mix(in oklab, white 78%, transparent);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  border: 1px solid color-mix(in oklab, white 60%, transparent);
+}
+.glass-dark {
+  background: color-mix(in oklab, var(--ink-800) 55%, transparent);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* The signature deep brand gradient (hero panels, sidebar). */
+.bg-brand-ink {
+  background:
+    radial-gradient(40rem 30rem at 12% 8%, color-mix(in oklab, var(--brand-500) 38%, transparent), transparent 60%),
+    radial-gradient(36rem 30rem at 95% 105%, color-mix(in oklab, var(--brand-700) 45%, transparent), transparent 60%),
+    linear-gradient(160deg, var(--ink-800) 0%, var(--ink-900) 60%, #02100a 100%);
+}
+
+/* Gradient text for headlines / brand marks. */
+.text-gradient {
+  background: linear-gradient(120deg, var(--brand-300), var(--brand-100) 55%, #99f6e4);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Coloured glow — pair with a brand bg element. */
+.glow-brand {
+  box-shadow: 0 10px 30px -8px color-mix(in oklab, var(--brand-500) 55%, transparent);
+}
+
+/* Layered, soft card depth (light surfaces). Registered as Tailwind
+   utilities so `hover:`/`group-hover:` variants generate correctly. */
+@utility shadow-card {
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.04),
+    0 8px 24px -12px rgba(15, 23, 42, 0.12);
+}
+@utility shadow-card-hover {
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.05),
+    0 18px 40px -16px rgba(5, 150, 105, 0.22);
+}
+
+/* Faint dotted grid overlay for hero/empty backgrounds. */
+.bg-grid {
+  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.18) 1px, transparent 1px);
+  background-size: 26px 26px;
+}
+
+/* Sheen swept across primary buttons on hover. */
+.sheen {
+  position: relative;
+  overflow: hidden;
+}
+.sheen::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-120%);
+  background: linear-gradient(
+    100deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.35) 50%,
+    transparent 70%
+  );
+  transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.sheen:hover::after {
+  transform: translateX(120%);
+}
+
+/* ============================================================
+   Scrollbars — thin, themed.
+   ============================================================ */
 * {
   scrollbar-width: thin;
   scrollbar-color: rgb(203 213 225) transparent;
@@ -50,30 +159,33 @@ table {
   background-color: rgb(148 163 184);
 }
 
-/* Soft drifting "aurora" blobs for branded backgrounds. */
+/* ============================================================
+   Motion
+   ============================================================ */
+
+/* Soft drifting "aurora" orbs for branded backgrounds. */
 @keyframes blob {
   0%,
   100% {
     transform: translate(0, 0) scale(1);
   }
   33% {
-    transform: translate(24px, -28px) scale(1.07);
+    transform: translate(36px, -42px) scale(1.12);
   }
   66% {
-    transform: translate(-18px, 18px) scale(0.95);
+    transform: translate(-28px, 26px) scale(0.92);
   }
 }
 .animate-blob {
-  animation: blob 16s ease-in-out infinite;
+  animation: blob 18s ease-in-out infinite;
 }
 .animation-delay-2000 {
-  animation-delay: -5s;
+  animation-delay: -6s;
 }
 .animation-delay-4000 {
-  animation-delay: -10s;
+  animation-delay: -12s;
 }
 
-/* Entrance transitions. */
 @keyframes fade-in {
   from {
     opacity: 0;
@@ -85,7 +197,7 @@ table {
 @keyframes fade-in-up {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(12px);
   }
   to {
     opacity: 1;
@@ -96,13 +208,48 @@ table {
   animation: fade-in 0.3s ease both;
 }
 .animate-fade-in-up {
-  animation: fade-in-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: fade-in-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Staggered entrance helper for grids/lists. */
+.stagger > * {
+  animation: fade-in-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.stagger > *:nth-child(1) { animation-delay: 0.02s; }
+.stagger > *:nth-child(2) { animation-delay: 0.06s; }
+.stagger > *:nth-child(3) { animation-delay: 0.10s; }
+.stagger > *:nth-child(4) { animation-delay: 0.14s; }
+.stagger > *:nth-child(5) { animation-delay: 0.18s; }
+.stagger > *:nth-child(6) { animation-delay: 0.22s; }
+
+/* Shimmer for skeleton/loading states. */
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+.shimmer {
+  position: relative;
+  overflow: hidden;
+  background: #eef2f6;
+}
+.shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.65), transparent);
+  animation: shimmer 1.5s infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .animate-blob,
   .animate-fade-in,
-  .animate-fade-in-up {
-    animation: none;
+  .animate-fade-in-up,
+  .stagger > *,
+  .shimmer::after,
+  .sheen::after {
+    animation: none !important;
+    transition: none !important;
   }
 }
