@@ -1,6 +1,7 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
+import { assertInOrg } from '../../common/org-refs';
 import { isManager, type AuthUser } from '../../auth/auth-user.interface';
 import type {
   CreateFollowUpDto,
@@ -56,6 +57,13 @@ export class FollowUpsService {
   }
 
   async create(user: AuthUser, dto: CreateFollowUpDto) {
+    await assertInOrg(
+      this.prisma.lead.count({
+        where: { id: dto.leadId, orgId: user.orgId },
+      }),
+      'Lead',
+    );
+
     return this.prisma.followUp.create({
       data: {
         ...dto,
@@ -72,6 +80,15 @@ export class FollowUpsService {
       select: { id: true },
     });
     if (!existing) throw new NotFoundException('Follow-up not found');
+
+    if (dto.leadId !== undefined) {
+      await assertInOrg(
+        this.prisma.lead.count({
+          where: { id: dto.leadId, orgId: user.orgId },
+        }),
+        'Lead',
+      );
+    }
 
     return this.prisma.followUp.update({
       where: { id },

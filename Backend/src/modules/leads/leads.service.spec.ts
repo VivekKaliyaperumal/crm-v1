@@ -12,6 +12,9 @@ interface LeadsMock {
     create: jest.Mock;
     delete: jest.Mock;
   };
+  leadActivity: { create: jest.Mock };
+  userRole: { findMany: jest.Mock };
+  assignmentPointer: { findUnique: jest.Mock; upsert: jest.Mock };
   $transaction: jest.Mock;
 }
 
@@ -24,6 +27,10 @@ function buildMock(): LeadsMock {
       create: jest.fn(),
       delete: jest.fn(),
     },
+    leadActivity: { create: jest.fn().mockResolvedValue({}) },
+    // No candidates → round-robin returns undefined (keeps create simple to assert).
+    userRole: { findMany: jest.fn().mockResolvedValue([]) },
+    assignmentPointer: { findUnique: jest.fn(), upsert: jest.fn() },
     $transaction: jest.fn().mockResolvedValue([[], 0]),
   };
 }

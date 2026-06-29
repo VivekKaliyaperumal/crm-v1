@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
+import { assertInOrg } from '../../common/org-refs';
 import type { AuthUser } from '../../auth/auth-user.interface';
 import type {
   CreateBookingDto,
@@ -39,12 +40,66 @@ export class BookingsService {
   }
 
   async create(user: AuthUser, dto: CreateBookingDto) {
-    return this.prisma.booking.create({
-      data: {
-        ...dto,
-        orgId: user.orgId,
-        createdBy: user.id,
-      },
+    const checks: Promise<void>[] = [
+      assertInOrg(
+        this.prisma.customer.count({
+          where: { id: dto.customerId, orgId: user.orgId },
+        }),
+        'Customer',
+      ),
+      assertInOrg(
+        this.prisma.plot.count({
+          where: { id: dto.plotId, orgId: user.orgId },
+        }),
+        'Plot',
+      ),
+    ];
+    if (dto.quotationId) {
+      checks.push(
+        assertInOrg(
+          this.prisma.quotation.count({
+            where: { id: dto.quotationId, orgId: user.orgId },
+          }),
+          'Quotation',
+        ),
+      );
+    }
+    if (dto.projectId) {
+      checks.push(
+        assertInOrg(
+          this.prisma.project.count({
+            where: { id: dto.projectId, orgId: user.orgId },
+          }),
+          'Project',
+        ),
+      );
+    }
+    await Promise.all(checks);
+
+    if (dto.bookingNumber) {
+      return this.prisma.booking.create({
+        data: {
+          ...dto,
+          bookingNumber: dto.bookingNumber,
+          orgId: user.orgId,
+          createdBy: user.id,
+        },
+      });
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      const count = await tx.booking.count({ where: { orgId: user.orgId } });
+      const bookingNumber = `BKG/${new Date().getFullYear()}/${String(
+        count + 1,
+      ).padStart(4, '0')}`;
+      return tx.booking.create({
+        data: {
+          ...dto,
+          bookingNumber,
+          orgId: user.orgId,
+          createdBy: user.id,
+        },
+      });
     });
   }
 
@@ -54,6 +109,49 @@ export class BookingsService {
       select: { id: true },
     });
     if (!existing) throw new NotFoundException('Booking not found');
+
+    const checks: Promise<void>[] = [];
+    if (dto.customerId !== undefined) {
+      checks.push(
+        assertInOrg(
+          this.prisma.customer.count({
+            where: { id: dto.customerId, orgId: user.orgId },
+          }),
+          'Customer',
+        ),
+      );
+    }
+    if (dto.plotId !== undefined) {
+      checks.push(
+        assertInOrg(
+          this.prisma.plot.count({
+            where: { id: dto.plotId, orgId: user.orgId },
+          }),
+          'Plot',
+        ),
+      );
+    }
+    if (dto.quotationId !== undefined) {
+      checks.push(
+        assertInOrg(
+          this.prisma.quotation.count({
+            where: { id: dto.quotationId, orgId: user.orgId },
+          }),
+          'Quotation',
+        ),
+      );
+    }
+    if (dto.projectId !== undefined) {
+      checks.push(
+        assertInOrg(
+          this.prisma.project.count({
+            where: { id: dto.projectId, orgId: user.orgId },
+          }),
+          'Project',
+        ),
+      );
+    }
+    await Promise.all(checks);
 
     return this.prisma.booking.update({
       where: { id },

@@ -1,4 +1,4 @@
-import { format, formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow } from 'date-fns';
 
 /** ₹ with Indian lakh/crore grouping. Accepts number | string | null. */
 export function formatINR(value: number | string | null | undefined): string {
@@ -12,12 +12,21 @@ export function formatINR(value: number | string | null | undefined): string {
   }).format(n);
 }
 
-/** dd-MMM-yyyy (org standard). */
+/** dd-MMM-yyyy (org standard), always rendered in Asia/Kolkata regardless of
+ * the viewer's timezone — the app targets NRI users abroad. */
+const kolkataDate = new Intl.DateTimeFormat('en-IN', {
+  timeZone: 'Asia/Kolkata',
+  day: '2-digit',
+  month: 'short',
+  year: 'numeric',
+});
+
 export function formatDate(value: string | Date | null | undefined): string {
   if (!value) return '—';
   const d = typeof value === 'string' ? new Date(value) : value;
   if (Number.isNaN(d.getTime())) return '—';
-  return format(d, 'dd-MMM-yyyy');
+  // en-IN yields "07 Jun 2026"; reformat to dd-MMM-yyyy → "07-Jun-2026".
+  return kolkataDate.format(d).replace(/\s+/g, '-');
 }
 
 export function relativeTime(value: string | Date | null | undefined): string {

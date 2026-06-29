@@ -1,6 +1,7 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
+import { assertInOrg } from '../../common/org-refs';
 import { isManager, type AuthUser } from '../../auth/auth-user.interface';
 import type {
   CreateSiteVisitDto,
@@ -55,6 +56,13 @@ export class SiteVisitsService {
   }
 
   async create(user: AuthUser, dto: CreateSiteVisitDto) {
+    await assertInOrg(
+      this.prisma.lead.count({
+        where: { id: dto.leadId, orgId: user.orgId },
+      }),
+      'Lead',
+    );
+
     return this.prisma.siteVisit.create({
       data: {
         ...dto,
@@ -71,6 +79,15 @@ export class SiteVisitsService {
       select: { id: true },
     });
     if (!existing) throw new NotFoundException('Site visit not found');
+
+    if (dto.leadId !== undefined) {
+      await assertInOrg(
+        this.prisma.lead.count({
+          where: { id: dto.leadId, orgId: user.orgId },
+        }),
+        'Lead',
+      );
+    }
 
     return this.prisma.siteVisit.update({
       where: { id },

@@ -9,7 +9,7 @@ const paymentStatusEnum = z.nativeEnum(PaymentStatus);
 export const createPaymentSchema = z.object({
   bookingId: z.string().uuid().optional(),
   customerId: z.string().uuid().optional(),
-  amount: z.coerce.number(),
+  amount: z.coerce.number().positive('Amount must be greater than 0'),
   mode: paymentModeEnum.default(PaymentMode.bank_transfer),
   status: paymentStatusEnum.default(PaymentStatus.scheduled),
   dueDate: z.coerce.date().optional(),

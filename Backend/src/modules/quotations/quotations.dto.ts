@@ -6,7 +6,8 @@ const quotationStatusEnum = z.nativeEnum(QuotationStatus);
 
 /** Fields a client may set when creating a quotation. org/createdBy come from auth. */
 export const createQuotationSchema = z.object({
-  quotationNumber: z.string().min(1, 'Quotation number is required'),
+  // Auto-generated server-side when omitted.
+  quotationNumber: z.string().min(1).optional(),
   customerId: z.string().uuid().optional(),
   leadId: z.string().uuid().optional(),
   plotId: z.string().uuid().optional(),

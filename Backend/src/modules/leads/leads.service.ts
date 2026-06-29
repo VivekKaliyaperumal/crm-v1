@@ -1,8 +1,14 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { ActivityType, AppRole, Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { isManager, type AuthUser } from '../../auth/auth-user.interface';
 import type { CreateLeadDto, ListLeadsQueryDto, UpdateLeadDto } from './leads.dto';
+
+const ASSIGNABLE_ROLES: AppRole[] = [
+  AppRole.sales_executive,
+  AppRole.sales_manager,
+  AppRole.telecaller,
+];
 
 @Injectable()
 export class LeadsService {
@@ -21,6 +27,40 @@ export class LeadsService {
       orgId: user.orgId,
       OR: [{ assignedTo: user.id }, { createdBy: user.id }],
     };
+  }
+
+  private logActivity(
+    user: AuthUser,
+    leadId: string,
+    type: ActivityType,
+    payload: Prisma.InputJsonValue,
+  ) {
+    return this.prisma.leadActivity.create({
+      data: { orgId: user.orgId, leadId, type, payload, actorId: user.id },
+    });
+  }
+
+  /** Round-robin the next sales user for a new unassigned lead (uses assignment_pointer). */
+  private async pickAssignee(orgId: string): Promise<string | undefined> {
+    const roles = await this.prisma.userRole.findMany({
+      where: { orgId, role: { in: ASSIGNABLE_ROLES } },
+      select: { userId: true },
+    });
+    const candidates = [...new Set(roles.map((r) => r.userId))].sort();
+    if (candidates.length === 0) return undefined;
+
+    const pointer = await this.prisma.assignmentPointer.findUnique({ where: { orgId } });
+    const lastIdx = pointer?.lastAssignedUserId
+      ? candidates.indexOf(pointer.lastAssignedUserId)
+      : -1;
+    const next = candidates[(lastIdx + 1) % candidates.length];
+
+    await this.prisma.assignmentPointer.upsert({
+      where: { orgId },
+      update: { lastAssignedUserId: next },
+      create: { orgId, lastAssignedUserId: next },
+    });
+    return next;
   }
 
   async list(user: AuthUser, query: ListLeadsQueryDto) {
@@ -70,28 +110,47 @@ export class LeadsService {
   }
 
   async create(user: AuthUser, dto: CreateLeadDto) {
-    return this.prisma.lead.create({
+    const assignedTo = dto.assignedTo ?? (await this.pickAssignee(user.orgId));
+
+    const lead = await this.prisma.lead.create({
       data: {
         ...dto,
         email: dto.email || null,
         orgId: user.orgId,
         createdBy: user.id,
+        assignedTo,
+        lastActivityAt: new Date(),
       },
     });
+
+    await this.logActivity(user, lead.id, ActivityType.note, { text: 'Lead created' });
+    return lead;
   }
 
   async update(user: AuthUser, id: string, dto: UpdateLeadDto) {
     // Enforce visibility before mutating.
     const existing = await this.prisma.lead.findFirst({
       where: { id, ...this.visibilityWhere(user) },
-      select: { id: true },
+      select: { id: true, status: true },
     });
     if (!existing) throw new NotFoundException('Lead not found');
 
-    return this.prisma.lead.update({
+    const lead = await this.prisma.lead.update({
       where: { id },
-      data: { ...dto, ...(dto.email !== undefined ? { email: dto.email || null } : {}) },
+      data: {
+        ...dto,
+        ...(dto.email !== undefined ? { email: dto.email || null } : {}),
+        lastActivityAt: new Date(),
+      },
     });
+
+    if (dto.status && dto.status !== existing.status) {
+      await this.logActivity(user, id, ActivityType.status_change, {
+        from: existing.status,
+        to: dto.status,
+      });
+    }
+    return lead;
   }
 
   async remove(user: AuthUser, id: string) {

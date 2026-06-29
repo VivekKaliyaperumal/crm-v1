@@ -1,6 +1,7 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
+import { assertInOrg } from '../../common/org-refs';
 import { isManager, type AuthUser } from '../../auth/auth-user.interface';
 import type { CreateTaskDto, ListTasksQueryDto, UpdateTaskDto } from './tasks.dto';
 
@@ -52,6 +53,39 @@ export class TasksService {
   }
 
   async create(user: AuthUser, dto: CreateTaskDto) {
+    const checks: Promise<void>[] = [];
+    if (dto.relatedLeadId) {
+      checks.push(
+        assertInOrg(
+          this.prisma.lead.count({
+            where: { id: dto.relatedLeadId, orgId: user.orgId },
+          }),
+          'Lead',
+        ),
+      );
+    }
+    if (dto.relatedCustomerId) {
+      checks.push(
+        assertInOrg(
+          this.prisma.customer.count({
+            where: { id: dto.relatedCustomerId, orgId: user.orgId },
+          }),
+          'Customer',
+        ),
+      );
+    }
+    if (dto.relatedOpportunityId) {
+      checks.push(
+        assertInOrg(
+          this.prisma.opportunity.count({
+            where: { id: dto.relatedOpportunityId, orgId: user.orgId },
+          }),
+          'Opportunity',
+        ),
+      );
+    }
+    await Promise.all(checks);
+
     return this.prisma.task.create({
       data: {
         ...dto,
@@ -68,6 +102,39 @@ export class TasksService {
       select: { id: true },
     });
     if (!existing) throw new NotFoundException('Task not found');
+
+    const checks: Promise<void>[] = [];
+    if (dto.relatedLeadId !== undefined) {
+      checks.push(
+        assertInOrg(
+          this.prisma.lead.count({
+            where: { id: dto.relatedLeadId, orgId: user.orgId },
+          }),
+          'Lead',
+        ),
+      );
+    }
+    if (dto.relatedCustomerId !== undefined) {
+      checks.push(
+        assertInOrg(
+          this.prisma.customer.count({
+            where: { id: dto.relatedCustomerId, orgId: user.orgId },
+          }),
+          'Customer',
+        ),
+      );
+    }
+    if (dto.relatedOpportunityId !== undefined) {
+      checks.push(
+        assertInOrg(
+          this.prisma.opportunity.count({
+            where: { id: dto.relatedOpportunityId, orgId: user.orgId },
+          }),
+          'Opportunity',
+        ),
+      );
+    }
+    await Promise.all(checks);
 
     return this.prisma.task.update({
       where: { id },

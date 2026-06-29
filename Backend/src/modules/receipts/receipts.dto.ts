@@ -3,10 +3,11 @@ import { z } from 'zod';
 
 /** Fields a client may set when creating a receipt. org/issuedBy come from auth. */
 export const createReceiptSchema = z.object({
-  receiptNumber: z.string().min(1, 'Receipt number is required'),
+  // Auto-generated server-side when omitted.
+  receiptNumber: z.string().min(1).optional(),
   paymentId: z.string().uuid().optional(),
   customerId: z.string().uuid().optional(),
-  amount: z.coerce.number(),
+  amount: z.coerce.number().positive('Amount must be greater than 0'),
   issuedAt: z.coerce.date().optional(),
   notes: z.string().trim().max(5000).optional(),
 });

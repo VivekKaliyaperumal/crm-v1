@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { APP_PIPE, APP_GUARD, APP_FILTER } from '@nestjs/core';
+import { APP_PIPE, APP_GUARD, APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { ZodValidationPipe } from 'nestjs-zod';
 import { PrismaModule } from './prisma/prisma.module';
@@ -8,6 +8,7 @@ import { AuthModule } from './auth/auth.module';
 import { HealthController } from './health.controller';
 import { validateEnv } from './config/env.validation';
 import { AllExceptionsFilter } from './common/all-exceptions.filter';
+import { AuditInterceptor } from './common/audit.interceptor';
 
 import { MeModule } from './modules/me/me.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
@@ -62,6 +63,7 @@ import { FollowUpsModule } from './modules/follow-ups/follow-ups.module';
     { provide: APP_PIPE, useClass: ZodValidationPipe },
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_FILTER, useClass: AllExceptionsFilter },
+    { provide: APP_INTERCEPTOR, useClass: AuditInterceptor },
   ],
 })
 export class AppModule {}

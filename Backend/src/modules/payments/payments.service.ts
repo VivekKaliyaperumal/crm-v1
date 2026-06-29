@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
+import { assertInOrg } from '../../common/org-refs';
 import type { AuthUser } from '../../auth/auth-user.interface';
 import type {
   CreatePaymentDto,
@@ -39,6 +40,29 @@ export class PaymentsService {
   }
 
   async create(user: AuthUser, dto: CreatePaymentDto) {
+    const checks: Promise<void>[] = [];
+    if (dto.bookingId) {
+      checks.push(
+        assertInOrg(
+          this.prisma.booking.count({
+            where: { id: dto.bookingId, orgId: user.orgId },
+          }),
+          'Booking',
+        ),
+      );
+    }
+    if (dto.customerId) {
+      checks.push(
+        assertInOrg(
+          this.prisma.customer.count({
+            where: { id: dto.customerId, orgId: user.orgId },
+          }),
+          'Customer',
+        ),
+      );
+    }
+    await Promise.all(checks);
+
     return this.prisma.payment.create({
       data: {
         ...dto,
@@ -53,6 +77,29 @@ export class PaymentsService {
       select: { id: true },
     });
     if (!existing) throw new NotFoundException('Payment not found');
+
+    const checks: Promise<void>[] = [];
+    if (dto.bookingId !== undefined) {
+      checks.push(
+        assertInOrg(
+          this.prisma.booking.count({
+            where: { id: dto.bookingId, orgId: user.orgId },
+          }),
+          'Booking',
+        ),
+      );
+    }
+    if (dto.customerId !== undefined) {
+      checks.push(
+        assertInOrg(
+          this.prisma.customer.count({
+            where: { id: dto.customerId, orgId: user.orgId },
+          }),
+          'Customer',
+        ),
+      );
+    }
+    await Promise.all(checks);
 
     return this.prisma.payment.update({
       where: { id },

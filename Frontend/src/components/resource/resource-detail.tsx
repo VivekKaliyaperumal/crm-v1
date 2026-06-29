@@ -21,6 +21,21 @@ function display(value: unknown, type: FieldDef['type']) {
   return String(value);
 }
 
+/** Resolves a ref field's id to the related row's label and links to it.
+ * Falls back to the raw id while loading or if the label is missing. */
+function RefValue({ field, id }: { field: FieldDef; id: string }) {
+  const { data } = useResourceItem(field.refPath!, id);
+  const label = (data?.[field.refLabel!] as string | undefined) ?? id;
+  return (
+    <Link
+      href={`/app/${field.refPath}/${id}`}
+      className="text-emerald-600 transition-colors hover:text-emerald-700 hover:underline"
+    >
+      {label}
+    </Link>
+  );
+}
+
 export function ResourceDetail({ config, id }: { config: ResourceConfig; id: string }) {
   const router = useRouter();
   const { data: me } = useMe();
@@ -117,6 +132,11 @@ export function ResourceDetail({ config, id }: { config: ResourceConfig; id: str
                 <dd className="text-sm font-medium text-slate-700">
                   {f.type === 'select' || f.key === 'channel' || f.key === 'mode' ? (
                     <Pill value={data[f.key] as string} />
+                  ) : f.type === 'ref' &&
+                    data[f.key] !== null &&
+                    data[f.key] !== undefined &&
+                    data[f.key] !== '' ? (
+                    <RefValue field={f} id={String(data[f.key])} />
                   ) : (
                     display(data[f.key], f.type)
                   )}

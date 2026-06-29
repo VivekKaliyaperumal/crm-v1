@@ -1,6 +1,7 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
+import { assertInOrg } from '../../common/org-refs';
 import { isManager, type AuthUser } from '../../auth/auth-user.interface';
 import type { CreateDealDto, ListDealsQueryDto, UpdateDealDto } from './deals.dto';
 
@@ -38,6 +39,39 @@ export class DealsService {
   }
 
   async create(user: AuthUser, dto: CreateDealDto) {
+    const checks: Promise<void>[] = [];
+    if (dto.opportunityId) {
+      checks.push(
+        assertInOrg(
+          this.prisma.opportunity.count({
+            where: { id: dto.opportunityId, orgId: user.orgId },
+          }),
+          'Opportunity',
+        ),
+      );
+    }
+    if (dto.customerId) {
+      checks.push(
+        assertInOrg(
+          this.prisma.customer.count({
+            where: { id: dto.customerId, orgId: user.orgId },
+          }),
+          'Customer',
+        ),
+      );
+    }
+    if (dto.plotId) {
+      checks.push(
+        assertInOrg(
+          this.prisma.plot.count({
+            where: { id: dto.plotId, orgId: user.orgId },
+          }),
+          'Plot',
+        ),
+      );
+    }
+    await Promise.all(checks);
+
     return this.prisma.deal.create({
       data: {
         ...dto,
@@ -57,6 +91,39 @@ export class DealsService {
     if (!isManager(user.roles) && existing.ownerId !== user.id) {
       throw new ForbiddenException('You can only update your own deals');
     }
+
+    const checks: Promise<void>[] = [];
+    if (dto.opportunityId !== undefined) {
+      checks.push(
+        assertInOrg(
+          this.prisma.opportunity.count({
+            where: { id: dto.opportunityId, orgId: user.orgId },
+          }),
+          'Opportunity',
+        ),
+      );
+    }
+    if (dto.customerId !== undefined) {
+      checks.push(
+        assertInOrg(
+          this.prisma.customer.count({
+            where: { id: dto.customerId, orgId: user.orgId },
+          }),
+          'Customer',
+        ),
+      );
+    }
+    if (dto.plotId !== undefined) {
+      checks.push(
+        assertInOrg(
+          this.prisma.plot.count({
+            where: { id: dto.plotId, orgId: user.orgId },
+          }),
+          'Plot',
+        ),
+      );
+    }
+    await Promise.all(checks);
 
     return this.prisma.deal.update({
       where: { id },

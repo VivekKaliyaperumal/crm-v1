@@ -1,6 +1,7 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
+import { assertInOrg } from '../../common/org-refs';
 import { isManager, type AuthUser } from '../../auth/auth-user.interface';
 import type {
   CreateOpportunityDto,
@@ -42,6 +43,49 @@ export class OpportunitiesService {
   }
 
   async create(user: AuthUser, dto: CreateOpportunityDto) {
+    const checks: Promise<void>[] = [];
+    if (dto.leadId) {
+      checks.push(
+        assertInOrg(
+          this.prisma.lead.count({
+            where: { id: dto.leadId, orgId: user.orgId },
+          }),
+          'Lead',
+        ),
+      );
+    }
+    if (dto.customerId) {
+      checks.push(
+        assertInOrg(
+          this.prisma.customer.count({
+            where: { id: dto.customerId, orgId: user.orgId },
+          }),
+          'Customer',
+        ),
+      );
+    }
+    if (dto.projectId) {
+      checks.push(
+        assertInOrg(
+          this.prisma.project.count({
+            where: { id: dto.projectId, orgId: user.orgId },
+          }),
+          'Project',
+        ),
+      );
+    }
+    if (dto.plotId) {
+      checks.push(
+        assertInOrg(
+          this.prisma.plot.count({
+            where: { id: dto.plotId, orgId: user.orgId },
+          }),
+          'Plot',
+        ),
+      );
+    }
+    await Promise.all(checks);
+
     return this.prisma.opportunity.create({
       data: {
         ...dto,
@@ -61,6 +105,49 @@ export class OpportunitiesService {
     if (!isManager(user.roles) && existing.ownerId !== user.id) {
       throw new ForbiddenException('You can only update your own opportunities');
     }
+
+    const checks: Promise<void>[] = [];
+    if (dto.leadId !== undefined) {
+      checks.push(
+        assertInOrg(
+          this.prisma.lead.count({
+            where: { id: dto.leadId, orgId: user.orgId },
+          }),
+          'Lead',
+        ),
+      );
+    }
+    if (dto.customerId !== undefined) {
+      checks.push(
+        assertInOrg(
+          this.prisma.customer.count({
+            where: { id: dto.customerId, orgId: user.orgId },
+          }),
+          'Customer',
+        ),
+      );
+    }
+    if (dto.projectId !== undefined) {
+      checks.push(
+        assertInOrg(
+          this.prisma.project.count({
+            where: { id: dto.projectId, orgId: user.orgId },
+          }),
+          'Project',
+        ),
+      );
+    }
+    if (dto.plotId !== undefined) {
+      checks.push(
+        assertInOrg(
+          this.prisma.plot.count({
+            where: { id: dto.plotId, orgId: user.orgId },
+          }),
+          'Plot',
+        ),
+      );
+    }
+    await Promise.all(checks);
 
     return this.prisma.opportunity.update({
       where: { id },

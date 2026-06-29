@@ -6,7 +6,8 @@ const bookingStatusEnum = z.nativeEnum(BookingStatus);
 
 /** Fields a client may set when creating a booking. org/createdBy come from auth. */
 export const createBookingSchema = z.object({
-  bookingNumber: z.string().min(1, 'Booking number is required'),
+  // Auto-generated server-side when omitted.
+  bookingNumber: z.string().min(1).optional(),
   quotationId: z.string().uuid().optional(),
   customerId: z.string().uuid(),
   plotId: z.string().uuid(),
